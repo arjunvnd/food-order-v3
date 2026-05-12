@@ -1,0 +1,17 @@
+enum Role {
+    SUPER_ADMIN
+    ADMIN
+    VENDOR
+}
+
+enum OrderStatus {
+    PENDING
+    ACCEPTED
+    REJECTED
+    COMPLETED
+}
+
+enum PaymentStatus {
+    UNPAID
+    PAID
+}

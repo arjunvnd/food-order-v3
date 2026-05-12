@@ -1,0 +1,10 @@
+# Root workspace node_modules (hoisted by npm workspaces)
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

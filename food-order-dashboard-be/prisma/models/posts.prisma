@@ -1,0 +1,14 @@
+model Mall {
+    id         String      @id @default(uuid())
+    name       String
+    address    String
+    logoUrl    String?
+    isActive   Boolean     @default(true)
+    vendors    Vendor[]
+    tables     Table[]
+    mallAdmins MallAdmin[]
+    createdAt  DateTime    @default(now())
+    updatedAt  DateTime    @updatedAt
+
+    @@map("malls")
+}

@@ -1,0 +1,10 @@
+model MallAdmin {
+    id     String @id @default(uuid())
+    userId String
+    mallId String
+    user   User   @relation(fields: [userId], references: [id])
+    mall   Mall   @relation(fields: [mallId], references: [id])
+
+    @@unique([userId, mallId])
+    @@map("mall_admins")
+}

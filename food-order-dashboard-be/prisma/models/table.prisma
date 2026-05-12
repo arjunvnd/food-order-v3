@@ -1,0 +1,14 @@
+model Table {
+    id          String   @id @default(uuid())
+    tableNumber String
+    mallId      String
+    qrToken     String   @unique @default(uuid())
+    isActive    Boolean  @default(true)
+    mall        Mall     @relation(fields: [mallId], references: [id])
+    orders      Order[]
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@unique([tableNumber, mallId])
+    @@map("tables")
+}
