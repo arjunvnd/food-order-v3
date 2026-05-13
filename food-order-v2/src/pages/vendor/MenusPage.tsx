@@ -45,9 +45,8 @@ export default function MenusPage() {
   ) => {
     if (currentlyActive) return; // prevent deactivating the current active menu directly
     try {
-      // Deactivate all others first (backend should handle this, we reflect it locally)
-      const updated = await menuService.updateMenu(menuId, { isActive: true });
-      // Locally mark all others inactive
+      // Backend atomically deactivates all other menus and activates this one
+      const updated = await menuService.activateMenu(menuId);
       menus.forEach((m) => {
         if (m.id !== menuId && m.isActive) {
           dispatch(updateMenuInList({ ...m, isActive: false }));

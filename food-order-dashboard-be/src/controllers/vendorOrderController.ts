@@ -13,10 +13,21 @@ export const getVendorOrders = async (
     const vendorId = req.user!.vendorId!;
     const { status, from, to } = req.query;
 
+    const validStatuses: OrderStatus[] = [
+      'PENDING',
+      'ACCEPTED',
+      'REJECTED',
+      'COMPLETED',
+    ];
+    const statusFilter =
+      status && validStatuses.includes(status as OrderStatus)
+        ? (status as OrderStatus)
+        : undefined;
+
     const orders = await prisma.order.findMany({
       where: {
         vendorId,
-        ...(status ? { status: status as OrderStatus } : {}),
+        ...(statusFilter ? { status: statusFilter } : {}),
         ...(from || to
           ? {
               createdAt: {

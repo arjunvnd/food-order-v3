@@ -14,24 +14,41 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SendIcon from "@mui/icons-material/Send";
 import { restaurantService } from "../../services/restaurantService";
 
+const isDevInvite = import.meta.env.VITE_VENDOR_INVITE_DEV_MODE === "true";
+
 export default function InviteVendorPage() {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
+  const [vendorName, setVendorName] = useState("");
+  const [restaurantName, setRestaurantName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{
-    name?: string;
+    vendorName?: string;
+    restaurantName?: string;
     email?: string;
+    password?: string;
+    confirmPassword?: string;
   }>({});
 
   const validate = () => {
     const errs: typeof fieldErrors = {};
-    if (!name.trim()) errs.name = "Restaurant name is required";
+    if (!vendorName.trim()) errs.vendorName = "Vendor name is required";
+    if (!restaurantName.trim())
+      errs.restaurantName = "Restaurant name is required";
     if (!email.trim()) errs.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
       errs.email = "Enter a valid email address";
+    if (isDevInvite) {
+      if (!password) errs.password = "Password is required";
+      else if (password.length < 8)
+        errs.password = "Must be at least 8 characters";
+      if (password !== confirmPassword)
+        errs.confirmPassword = "Passwords do not match";
+    }
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -44,12 +61,17 @@ export default function InviteVendorPage() {
 
     try {
       await restaurantService.inviteVendor({
-        name: name.trim(),
+        name: vendorName.trim(),
+        restaurantName: restaurantName.trim(),
         email: email.trim(),
+        ...(isDevInvite ? { password } : {}),
       });
       setSuccess(true);
-      setName("");
+      setVendorName("");
+      setRestaurantName("");
       setEmail("");
+      setPassword("");
+      setConfirmPassword("");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to invite vendor.");
     } finally {
@@ -70,17 +92,28 @@ export default function InviteVendorPage() {
         Invite Vendor
       </Typography>
       <Typography variant="body2" color="text.secondary" mb={3}>
-        The vendor will receive an email invitation to set up their account.
+        {isDevInvite
+          ? "Dev mode: set a temporary password for the vendor. No email will be sent — share the password with them directly."
+          : "The vendor will receive an email invitation to set their password and complete their profile."}
       </Typography>
 
       <Paper variant="outlined" sx={{ p: 3 }}>
         <Stack spacing={2}>
           <TextField
             label="Restaurant Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            error={Boolean(fieldErrors.name)}
-            helperText={fieldErrors.name}
+            value={restaurantName}
+            onChange={(e) => setRestaurantName(e.target.value)}
+            error={Boolean(fieldErrors.restaurantName)}
+            helperText={fieldErrors.restaurantName}
+            fullWidth
+            required
+          />
+          <TextField
+            label="Vendor Full Name"
+            value={vendorName}
+            onChange={(e) => setVendorName(e.target.value)}
+            error={Boolean(fieldErrors.vendorName)}
+            helperText={fieldErrors.vendorName}
             fullWidth
             required
           />
@@ -94,12 +127,40 @@ export default function InviteVendorPage() {
             fullWidth
             required
           />
+          {isDevInvite && (
+            <>
+              <TextField
+                label="Temporary Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                error={Boolean(fieldErrors.password)}
+                helperText={
+                  fieldErrors.password ??
+                  "Min 8 characters — share this with the vendor"
+                }
+                fullWidth
+                required
+              />
+              <TextField
+                label="Confirm Password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                error={Boolean(fieldErrors.confirmPassword)}
+                helperText={fieldErrors.confirmPassword}
+                fullWidth
+                required
+              />
+            </>
+          )}
         </Stack>
 
         {success && (
           <Alert severity="success" sx={{ mt: 2 }}>
-            Invitation sent! The vendor will receive an email to complete their
-            setup.
+            {isDevInvite
+              ? "Vendor created. Share the temporary password with them so they can log in."
+              : `Invitation sent! ${email || "The vendor"} will receive an email to set their password.`}
           </Alert>
         )}
         {error && (

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middlewares/auth';
 import { requireRole } from '../middlewares/rbac';
+import { upload } from '../middlewares/upload';
 import {
   getMenus,
   createMenu,
@@ -21,11 +22,15 @@ import {
   rejectOrder,
   completeOrder,
 } from '../controllers/vendorOrderController';
+import { updateVendorProfile } from '../controllers/vendorProfileController';
 
 const router = Router();
 
 // All vendor routes require a valid JWT and the VENDOR role
 router.use(requireAuth, requireRole('VENDOR'));
+
+// Profile
+router.put('/profile', upload.single('logo'), updateVendorProfile);
 
 // Menus
 router.get('/menus', getMenus);
@@ -36,8 +41,8 @@ router.patch('/menus/:menuId/activate', activateMenu);
 
 // Menu items
 router.get('/menus/:menuId/items', getMenuItems);
-router.post('/menus/:menuId/items', createMenuItem);
-router.put('/menu-items/:itemId', updateMenuItem);
+router.post('/menus/:menuId/items', upload.single('image'), createMenuItem);
+router.put('/menu-items/:itemId', upload.single('image'), updateMenuItem);
 router.delete('/menu-items/:itemId', deleteMenuItem);
 router.patch('/menu-items/:itemId/availability', toggleAvailability);
 

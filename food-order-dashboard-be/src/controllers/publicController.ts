@@ -80,6 +80,7 @@ export const getVendorDetail = async (
 ) => {
   try {
     const vendorId = req.params.vendorId as string;
+    console.log('vendorId', vendorId);
     const vendor = await prisma.vendor.findFirst({
       where: { id: vendorId, isActive: true },
       select: {

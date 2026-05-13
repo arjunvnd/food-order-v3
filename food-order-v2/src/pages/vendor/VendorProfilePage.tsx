@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import {
   Box,
   Typography,
@@ -19,7 +20,10 @@ import { restaurantService } from "../../services/restaurantService";
 import type { Vendor } from "../../types";
 
 export default function VendorProfilePage() {
-  const vendorId = useAppSelector((s) => s.auth.user?.sub ?? "");
+  const vendorId = useAppSelector((s) => s.auth.vendorId ?? "");
+  const [searchParams] = useSearchParams();
+  const isSetupMode = searchParams.get("setup") === "true";
+  const navigate = useNavigate();
 
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [name, setName] = useState("");
@@ -40,9 +44,9 @@ export default function VendorProfilePage() {
       .getVendorById(vendorId)
       .then((v) => {
         setVendor(v);
-        setName(v.name);
-        setDescription(v.description);
-        setCuisineType(v.cuisineType);
+        setName(v.restaurantName);
+        setDescription(v.description ?? "");
+        setCuisineType(v.cuisineType ?? "");
         setIsActive(v.isActive);
         setLogoPreview(v.logoUrl);
       })
@@ -82,6 +86,9 @@ export default function VendorProfilePage() {
       setVendor(updated);
       setSuccess(true);
       setLogoFile(null);
+      if (isSetupMode) {
+        navigate("/vendor", { replace: true });
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to save profile.");
     } finally {
@@ -99,9 +106,14 @@ export default function VendorProfilePage() {
 
   return (
     <Box maxWidth={560} mx="auto">
-      <Typography variant="h5" fontWeight={700} mb={3}>
-        Restaurant Profile
+      <Typography variant="h5" fontWeight={700} mb={1}>
+        {isSetupMode ? "Complete Your Profile" : "Restaurant Profile"}
       </Typography>
+      {isSetupMode && (
+        <Typography variant="body2" color="text.secondary" mb={3}>
+          Welcome! Please fill in your restaurant details before you start managing orders.
+        </Typography>
+      )}
 
       {/* Logo */}
       <Paper variant="outlined" sx={{ p: 3, mb: 3, textAlign: "center" }}>

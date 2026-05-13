@@ -37,7 +37,8 @@ export const createMenuItem = async (
   try {
     const vendorId = req.user!.vendorId!;
     const menuId = req.params.menuId as string;
-    const { name, price, description, imageUrl } = req.body;
+    const { name, price, description } = req.body;
+    const imageFile = req.file;
 
     const menu = await assertMenuOwnership(menuId, vendorId);
     if (!menu) {
@@ -46,7 +47,13 @@ export const createMenuItem = async (
     }
 
     const item = await prisma.menuItem.create({
-      data: { menuId, name, price, description, imageUrl },
+      data: {
+        menuId,
+        name,
+        price: parseFloat(price),
+        description,
+        ...(imageFile ? { imageUrl: `/uploads/${imageFile.filename}` } : {}),
+      },
     });
     res.status(201).json(item);
   } catch (error) {
@@ -63,7 +70,8 @@ export const updateMenuItem = async (
   try {
     const vendorId = req.user!.vendorId!;
     const itemId = req.params.itemId as string;
-    const { name, price, description, imageUrl, isAvailable } = req.body;
+    const { name, price, description, isAvailable } = req.body;
+    const imageFile = req.file;
 
     const item = await prisma.menuItem.findFirst({
       where: { id: itemId, menu: { vendorId } },
@@ -75,7 +83,15 @@ export const updateMenuItem = async (
 
     const updated = await prisma.menuItem.update({
       where: { id: itemId },
-      data: { name, price, description, imageUrl, isAvailable },
+      data: {
+        ...(name !== undefined ? { name } : {}),
+        ...(price !== undefined ? { price: parseFloat(price) } : {}),
+        ...(description !== undefined ? { description } : {}),
+        ...(isAvailable !== undefined
+          ? { isAvailable: isAvailable === 'true' || isAvailable === true }
+          : {}),
+        ...(imageFile ? { imageUrl: `/uploads/${imageFile.filename}` } : {}),
+      },
     });
     res.json(updated);
   } catch (error) {

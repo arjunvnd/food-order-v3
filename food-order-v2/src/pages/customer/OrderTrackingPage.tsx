@@ -18,15 +18,10 @@ import { useWebSocket } from "../../hooks/useWebSocket";
 import OrderStatusChip from "../../components/common/OrderStatusChip";
 import type { OrderStatus } from "../../types";
 
-const STATUS_STEPS: OrderStatus[] = [
-  "paid",
-  "accepted",
-  "preparing",
-  "completed",
-];
+const STATUS_STEPS: OrderStatus[] = ["PENDING", "ACCEPTED", "COMPLETED"];
 
 function getActiveStep(status: OrderStatus): number {
-  if (status === "rejected") return -1;
+  if (status === "REJECTED") return -1;
   return STATUS_STEPS.indexOf(status);
 }
 
@@ -59,7 +54,7 @@ export default function OrderTrackingPage() {
   }
 
   const activeStep = getActiveStep(currentOrder.status);
-  const isRejected = currentOrder.status === "rejected";
+  const isRejected = currentOrder.status === "REJECTED";
 
   return (
     <Box maxWidth={560} mx="auto">
@@ -81,7 +76,7 @@ export default function OrderTrackingPage() {
             Your order was rejected. Please contact the restaurant.
           </Typography>
         )}
-        {currentOrder.status === "completed" && (
+        {currentOrder.status === "COMPLETED" && (
           <Typography
             variant="body2"
             color="success.main"
@@ -98,7 +93,9 @@ export default function OrderTrackingPage() {
         <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
           {STATUS_STEPS.map((s) => (
             <Step key={s}>
-              <StepLabel>{s.charAt(0).toUpperCase() + s.slice(1)}</StepLabel>
+              <StepLabel>
+                {s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()}
+              </StepLabel>
             </Step>
           ))}
         </Stepper>

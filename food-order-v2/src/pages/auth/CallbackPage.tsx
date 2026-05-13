@@ -20,10 +20,15 @@ export default function CallbackPage() {
 
     dispatch(setAuthUser(user as Record<string, unknown>)).then((action) => {
       if (setAuthUser.fulfilled.match(action)) {
-        const role = action.payload.role;
+        const { role, isProfileComplete } = action.payload;
         if (role === "admin") navigate("/admin", { replace: true });
-        else if (role === "vendor") navigate("/vendor", { replace: true });
-        else navigate("/unauthorized", { replace: true });
+        else if (role === "vendor") {
+          if (isProfileComplete === false) {
+            navigate("/vendor/profile?setup=true", { replace: true });
+          } else {
+            navigate("/vendor", { replace: true });
+          }
+        } else navigate("/unauthorized", { replace: true });
       }
     });
   }, [

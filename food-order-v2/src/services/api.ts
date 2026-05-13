@@ -24,4 +24,29 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Prisma serialises Decimal fields as strings in JSON.
+// Coerce known numeric fields to numbers on every response so components can
+// call .toFixed() and do arithmetic without wrapping every usage in Number().
+const DECIMAL_FIELDS = new Set(["price", "unitPrice", "totalAmount"]);
+function coerceDecimals(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(coerceDecimals);
+  if (value !== null && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [
+        k,
+        DECIMAL_FIELDS.has(k) && typeof v === "string"
+          ? parseFloat(v)
+          : coerceDecimals(v),
+      ]),
+    );
+  }
+  return value;
+}
+
+api.interceptors.response.use((response) => {
+  response.data = coerceDecimals(response.data);
+  return response;
+});
+
 export default api;

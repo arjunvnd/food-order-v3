@@ -32,7 +32,7 @@ export default function VendorDashboard() {
   const vendorId = useAppSelector((s) => s.auth.user?.sub ?? "");
 
   useEffect(() => {
-    if (vendorId) dispatch(fetchVendorOrders({ vendorId, status: "paid" }));
+    if (vendorId) dispatch(fetchVendorOrders({ vendorId, status: "PENDING" }));
   }, [vendorId, dispatch]);
 
   useWebSocket(
@@ -43,8 +43,8 @@ export default function VendorDashboard() {
 
   const handleAccept = async (orderId: string) => {
     try {
-      await orderService.updateOrderStatus(orderId, "accepted");
-      dispatch(updateOrderStatus({ orderId, status: "accepted" }));
+      await orderService.updateOrderStatus(orderId, "ACCEPTED");
+      dispatch(updateOrderStatus({ orderId, status: "ACCEPTED" }));
     } catch {
       /* show toast in production */
     }
@@ -52,14 +52,14 @@ export default function VendorDashboard() {
 
   const handleReject = async (orderId: string) => {
     try {
-      await orderService.updateOrderStatus(orderId, "rejected");
-      dispatch(updateOrderStatus({ orderId, status: "rejected" }));
+      await orderService.updateOrderStatus(orderId, "REJECTED");
+      dispatch(updateOrderStatus({ orderId, status: "REJECTED" }));
     } catch {
       /* show toast in production */
     }
   };
 
-  const incomingOrders = vendorOrders.filter((o) => o.status === "paid");
+  const incomingOrders = vendorOrders.filter((o) => o.status === "PENDING");
 
   return (
     <Box>

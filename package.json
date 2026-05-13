@@ -4,13 +4,16 @@
   "private": true,
   "workspaces": [
     "food-order-dashboard-be",
-    "food-order-v2"
+    "food-order-v2",
+    "food-order-landing"
   ],
   "scripts": {
     "dev": "concurrently -n \"BE,FE\" -c \"blue,green\" \"npm run dev -w food-order-dashboard-be\" \"npm run dev -w food-order-v2\"",
+    "dev:landing": "concurrently -n \"BE,LANDING\" -c \"blue,cyan\" \"npm run dev -w food-order-dashboard-be\" \"npm run dev -w food-order-landing\"",
     "build": "npm run build -w food-order-dashboard-be && npm run build -w food-order-v2",
     "build:be": "npm run build -w food-order-dashboard-be",
     "build:fe": "npm run build -w food-order-v2",
+    "build:landing": "npm run build -w food-order-landing",
     "start": "concurrently -n \"BE,FE\" -c \"blue,green\" \"npm run start -w food-order-dashboard-be\" \"npm run preview -w food-order-v2\"",
     "lint": "npm run lint -w food-order-dashboard-be && npm run lint -w food-order-v2"
   },

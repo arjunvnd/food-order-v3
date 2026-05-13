@@ -21,8 +21,7 @@ import { orderService } from "../../services/orderService";
 import type { OrderStatus } from "../../types";
 
 const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
-  accepted: "preparing",
-  preparing: "completed",
+  ACCEPTED: "COMPLETED",
 };
 
 export default function VendorOrderDetailPage() {
@@ -130,13 +129,13 @@ export default function VendorOrderDetailPage() {
       </Paper>
 
       {/* Status actions */}
-      {currentOrder.status === "paid" && (
+      {currentOrder.status === "PENDING" && (
         <Stack direction="row" spacing={2}>
           <Button
             variant="contained"
             color="success"
             fullWidth
-            onClick={() => handleStatusChange("accepted")}
+            onClick={() => handleStatusChange("ACCEPTED")}
           >
             Accept Order
           </Button>
@@ -144,7 +143,7 @@ export default function VendorOrderDetailPage() {
             variant="outlined"
             color="error"
             fullWidth
-            onClick={() => handleStatusChange("rejected")}
+            onClick={() => handleStatusChange("REJECTED")}
           >
             Reject Order
           </Button>
@@ -158,7 +157,9 @@ export default function VendorOrderDetailPage() {
           size="large"
           onClick={() => handleStatusChange(nextStatus)}
         >
-          Mark as {nextStatus.charAt(0).toUpperCase() + nextStatus.slice(1)}
+          Mark as{" "}
+          {nextStatus.charAt(0).toUpperCase() +
+            nextStatus.slice(1).toLowerCase()}
         </Button>
       )}
     </Box>

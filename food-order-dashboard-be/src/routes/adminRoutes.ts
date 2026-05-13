@@ -10,6 +10,7 @@ import {
 } from '../controllers/tableController';
 import {
   listVendors,
+  inviteVendor,
   onboardVendor,
   resetVendorPassword,
   deactivateVendor,
@@ -17,8 +18,9 @@ import {
 
 const router = Router();
 
-// All admin routes require a valid JWT and the ADMIN role
-router.use(requireAuth, requireRole('ADMIN'));
+// All admin routes require a valid JWT and at least the ADMIN role
+// SUPER_ADMIN is also permitted (they are a superset of ADMIN)
+router.use(requireAuth, requireRole('ADMIN', 'SUPER_ADMIN'));
 
 // Tables
 router.get('/tables', getTables);
@@ -29,6 +31,7 @@ router.patch('/tables/:tableId/rotate-qr', rotateQrToken);
 
 // Vendors
 router.get('/vendors', listVendors);
+router.post('/vendors/invite', inviteVendor);
 router.post('/vendors', onboardVendor);
 router.patch('/vendors/:vendorId/reset-password', resetVendorPassword);
 router.patch('/vendors/:vendorId/deactivate', deactivateVendor);

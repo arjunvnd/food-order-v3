@@ -14,8 +14,14 @@ export const syncUser = async (
 ) => {
   try {
     const auth0Sub = req.auth?.payload.sub as string;
-    const email = req.auth?.payload['email'] as string | undefined;
-    const name = req.auth?.payload['name'] as string | undefined;
+    // Prefer body values (sent by frontend from the ID token/userinfo)
+    // and fall back to access token claims if present
+    const email =
+      (req.body?.email as string | undefined) ||
+      (req.auth?.payload['email'] as string | undefined);
+    const name =
+      (req.body?.name as string | undefined) ||
+      (req.auth?.payload['name'] as string | undefined);
 
     if (!auth0Sub) {
       res.status(400).json({ message: 'Missing sub claim in token' });
@@ -30,12 +36,20 @@ export const syncUser = async (
         name: name ?? null,
       },
       update: {
+        // Always overwrite with real values when available so stale auth0Sub emails get fixed
         ...(email ? { email } : {}),
         ...(name ? { name } : {}),
       },
       include: {
         mallAdmins: { select: { mallId: true } },
-        vendor: { select: { id: true, mallId: true, restaurantName: true } },
+        vendor: {
+          select: {
+            id: true,
+            mallId: true,
+            restaurantName: true,
+            isProfileComplete: true,
+          },
+        },
       },
     });
 
@@ -46,6 +60,7 @@ export const syncUser = async (
       role: user.role,
       mallId: user.mallAdmins[0]?.mallId ?? null,
       vendorId: user.vendor?.id ?? null,
+      isProfileComplete: user.vendor?.isProfileComplete ?? null,
     });
   } catch (error) {
     next(error);

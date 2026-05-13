@@ -42,9 +42,10 @@ export default function MenuItemsPage() {
 
   const handleToggleAvailable = async (itemId: string, current: boolean) => {
     try {
-      const formData = new FormData();
-      formData.append("isAvailable", String(!current));
-      const updated = await menuService.updateMenuItem(itemId, formData);
+      const updated = await menuService.toggleMenuItemAvailability(
+        itemId,
+        !current,
+      );
       dispatch(updateMenuItemInList(updated));
     } catch {
       /* show toast */

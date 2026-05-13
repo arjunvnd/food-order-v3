@@ -19,12 +19,15 @@ export interface Table {
 
 export interface Vendor {
   id: string;
-  name: string;
-  description: string;
+  restaurantName: string;
+  name?: string; // user.name from join
+  description: string | null;
   logoUrl: string | null;
-  cuisineType: string;
+  cuisineType: string | null;
   isActive: boolean;
-  userId: string; // Auth0 user id
+  isProfileComplete: boolean;
+  userId: string;
+  mallId: string;
 }
 
 // ─── Menu ─────────────────────────────────────────────────────────────────────
@@ -74,13 +77,7 @@ export interface GuestInfo {
 
 // ─── Order ────────────────────────────────────────────────────────────────────
 
-export type OrderStatus =
-  | "pending_payment"
-  | "paid"
-  | "accepted"
-  | "rejected"
-  | "preparing"
-  | "completed";
+export type OrderStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "COMPLETED";
 
 export interface OrderItem {
   menuItemId: string;

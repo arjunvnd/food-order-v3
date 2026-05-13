@@ -3,21 +3,21 @@ import type { Vendor } from "../types";
 
 export const restaurantService = {
   async getVendorsByMall(mallId: string): Promise<Vendor[]> {
-    const res = await api.get<Vendor[]>(`/malls/${mallId}/vendors`);
+    const res = await api.get<Vendor[]>(`/public/malls/${mallId}/vendors`);
     return res.data;
   },
 
   async getVendorById(vendorId: string): Promise<Vendor> {
-    const res = await api.get<Vendor>(`/vendors/${vendorId}`);
+    const res = await api.get<Vendor>(`/public/vendors/${vendorId}`);
     return res.data;
   },
 
   // Vendor-only: update own profile (supports multipart for logo upload)
   async updateVendorProfile(
-    vendorId: string,
+    _vendorId: string,
     formData: FormData,
   ): Promise<Vendor> {
-    const res = await api.put<Vendor>(`/vendors/${vendorId}`, formData, {
+    const res = await api.put<Vendor>(`/vendor/profile`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data;
@@ -29,12 +29,17 @@ export const restaurantService = {
     return res.data;
   },
 
-  async inviteVendor(data: { name: string; email: string }): Promise<Vendor> {
+  async inviteVendor(data: {
+    name: string;
+    email: string;
+    restaurantName: string;
+    password?: string;
+  }): Promise<Vendor> {
     const res = await api.post<Vendor>("/admin/vendors/invite", data);
     return res.data;
   },
 
   async resetVendorPassword(vendorId: string): Promise<void> {
-    await api.post(`/admin/vendors/${vendorId}/reset-password`);
+    await api.patch(`/admin/vendors/${vendorId}/reset-password`);
   },
 };

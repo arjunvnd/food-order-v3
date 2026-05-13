@@ -1,8 +1,9 @@
 import api from "./api";
-import type { Order, OrderStatus, GuestInfo, CartItem } from "../types";
+import type { Order, OrderStatus, CartItem } from "../types";
 
 interface PlaceOrderPayload {
-  guestInfo: GuestInfo;
+  guestName: string;
+  guestPhone: string;
   vendorId: string;
   mallId: string;
   tableId: string;
@@ -16,10 +17,10 @@ export const orderService = {
     return res.data;
   },
 
-  // Guest: pay with dummy code
+  // Guest: pay with dummy code — backend reads body field named "code"
   async payOrder(orderId: string, paymentCode: string): Promise<Order> {
     const res = await api.post<Order>(`/orders/${orderId}/pay`, {
-      paymentCode,
+      code: paymentCode,
     });
     return res.data;
   },
@@ -32,22 +33,28 @@ export const orderService = {
 
   // Vendor: get all their orders, with optional status filter
   async getVendorOrders(
-    vendorId: string,
+    _vendorId: string,
     status?: OrderStatus,
   ): Promise<Order[]> {
+    // Vendor-authenticated: backend derives vendor identity from JWT
     const params = status ? { status } : {};
-    const res = await api.get<Order[]>(`/vendors/${vendorId}/orders`, {
-      params,
-    });
+    const res = await api.get<Order[]>(`/vendor/orders`, { params });
     return res.data;
   },
 
-  // Vendor: update order status
+  // Vendor: update order status — routes to the correct dedicated endpoint
   async updateOrderStatus(
     orderId: string,
     status: OrderStatus,
   ): Promise<Order> {
-    const res = await api.patch<Order>(`/orders/${orderId}/status`, { status });
+    const actionMap: Partial<Record<OrderStatus, string>> = {
+      ACCEPTED: "accept",
+      REJECTED: "reject",
+      COMPLETED: "complete",
+    };
+    const action = actionMap[status];
+    if (!action) throw new Error(`Cannot transition to status ${status}`);
+    const res = await api.patch<Order>(`/vendor/orders/${orderId}/${action}`);
     return res.data;
   },
 

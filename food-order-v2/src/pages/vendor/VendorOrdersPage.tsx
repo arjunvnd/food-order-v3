@@ -23,11 +23,10 @@ import type { OrderStatus } from "../../types";
 
 const TABS: { label: string; value: OrderStatus | "all" }[] = [
   { label: "All", value: "all" },
-  { label: "Paid", value: "paid" },
-  { label: "Accepted", value: "accepted" },
-  { label: "Preparing", value: "preparing" },
-  { label: "Completed", value: "completed" },
-  { label: "Rejected", value: "rejected" },
+  { label: "Pending", value: "PENDING" },
+  { label: "Accepted", value: "ACCEPTED" },
+  { label: "Completed", value: "COMPLETED" },
+  { label: "Rejected", value: "REJECTED" },
 ];
 
 export default function VendorOrdersPage() {

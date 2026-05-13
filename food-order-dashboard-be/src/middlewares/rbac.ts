@@ -38,13 +38,21 @@ export const requireRole = (...roles: Role[]) => {
         return;
       }
 
+      // For SUPER_ADMIN with no MallAdmin assignment, fall back to the first
+      // mall in the system so admin panel endpoints work in single-mall setups.
+      let mallId: string | null = user.mallAdmins[0]?.mallId ?? null;
+      if (!mallId && user.role === 'SUPER_ADMIN') {
+        const firstMall = await prisma.mall.findFirst({ select: { id: true } });
+        mallId = firstMall?.id ?? null;
+      }
+
       req.user = {
         id: user.id,
         auth0Sub: user.auth0Sub,
         email: user.email,
         name: user.name,
         role: user.role as Role,
-        mallId: user.mallAdmins[0]?.mallId ?? null,
+        mallId,
         vendorId: user.vendor?.id ?? null,
       };
 

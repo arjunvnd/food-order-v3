@@ -38,8 +38,8 @@ export default function VendorsPage() {
 
   const filtered = vendors.filter(
     (v) =>
-      v.name.toLowerCase().includes(search.toLowerCase()) ||
-      v.cuisineType.toLowerCase().includes(search.toLowerCase()),
+      (v.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (v.cuisineType ?? "").toLowerCase().includes(search.toLowerCase()),
   );
 
   return (

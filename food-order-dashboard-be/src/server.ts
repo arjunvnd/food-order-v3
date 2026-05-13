@@ -2,6 +2,7 @@ import http from 'http';
 import app from './app';
 import config from './config/config';
 import { initSocket } from './services/socketService';
+import logger from './lib/logger';
 
 const server = http.createServer(app);
 
@@ -9,5 +10,5 @@ const server = http.createServer(app);
 initSocket(server);
 
 server.listen(config.port, () => {
-  console.log(`Server running on port ${config.port} [${config.nodeEnv}]`);
+  logger.info(`Server running on port ${config.port} [${config.nodeEnv}]`);
 });

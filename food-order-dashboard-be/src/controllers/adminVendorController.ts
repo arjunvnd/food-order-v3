@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ManagementClient } from 'auth0';
+import axios from 'axios';
+import crypto from 'crypto';
 import { prisma } from '../lib/prisma';
 import config from '../config/config';
 
@@ -29,6 +31,109 @@ export const listVendors = async (
 };
 
 /**
+ * POST /api/admin/vendors/invite
+ * Creates an Auth0 account for the vendor, sends Auth0 "Set your password" email,
+ * then stores User + Vendor in DB.
+ */
+export const inviteVendor = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const mallId = req.user!.mallId;
+    if (!mallId) {
+      res.status(400).json({ message: 'Admin not associated with a mall' });
+      return;
+    }
+
+    const { email, name, restaurantName, password } = req.body;
+    if (!email || !name || !restaurantName) {
+      res
+        .status(400)
+        .json({ message: 'email, name and restaurantName are required' });
+      return;
+    }
+
+    if (config.vendorInviteDevMode) {
+      // Dev mode: admin provides the password directly; no email is sent
+      if (!password || typeof password !== 'string' || password.length < 8) {
+        res.status(400).json({
+          message:
+            'password is required and must be at least 8 characters (dev mode)',
+        });
+        return;
+      }
+    }
+
+    // Dev mode: use admin-supplied password. Prod: generate random one so vendor must use the reset email.
+    const temporaryPassword = config.vendorInviteDevMode
+      ? (password as string)
+      : crypto.randomBytes(16).toString('hex') + 'A1!';
+
+    const mgmt = getManagementClient();
+    let auth0Sub: string;
+
+    try {
+      const auth0User = await mgmt.users.create({
+        email,
+        password: temporaryPassword,
+        connection: 'Username-Password-Authentication',
+        name,
+      });
+      auth0Sub = auth0User.user_id!;
+    } catch (auth0Err: unknown) {
+      const msg =
+        auth0Err instanceof Error
+          ? auth0Err.message
+          : 'Auth0 user creation failed';
+      res.status(409).json({ message: msg });
+      return;
+    }
+
+    // In prod: trigger Auth0's "Change Password" email so the vendor sets their own password.
+    // In dev mode: skip entirely — admin shares the password manually.
+    if (!config.vendorInviteDevMode) {
+      try {
+        await axios.post(
+          `https://${config.auth0Domain}/dbconnections/change_password`,
+          {
+            client_id: config.auth0ClientId,
+            email,
+            connection: 'Username-Password-Authentication',
+          },
+        );
+      } catch {
+        // Non-fatal — user is created; admin can use reset-password as fallback
+      }
+    }
+
+    // Create DB records — roll back Auth0 user if this fails
+    try {
+      const user = await prisma.user.create({
+        data: {
+          auth0Sub,
+          email,
+          name,
+          role: 'VENDOR',
+          vendor: {
+            create: { mallId, restaurantName, isProfileComplete: false },
+          },
+        },
+        include: { vendor: true },
+      });
+      res.status(201).json({ userId: user.id, vendorId: user.vendor?.id });
+    } catch (dbErr) {
+      // Compensating rollback
+      await mgmt.users.delete(auth0Sub).catch(() => undefined);
+      throw dbErr;
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * POST /api/admin/vendors
  * Creates an Auth0 account for the vendor, then stores User + Vendor in DB.
  */
@@ -48,14 +153,14 @@ export const onboardVendor = async (
       req.body;
 
     const mgmt = getManagementClient();
-    const auth0Response = await mgmt.users.create({
+    const auth0User = await mgmt.users.create({
       email,
       password: temporaryPassword,
       connection: 'Username-Password-Authentication',
       name,
     });
 
-    const auth0Sub = auth0Response.data.user_id;
+    const auth0Sub = auth0User.user_id!;
 
     const user = await prisma.user.create({
       data: {
@@ -110,7 +215,7 @@ export const resetVendorPassword = async (
       mark_email_as_verified: true,
     });
 
-    res.json({ resetLink: ticket.data.ticket });
+    res.json({ resetLink: ticket.ticket });
   } catch (error) {
     next(error);
   }

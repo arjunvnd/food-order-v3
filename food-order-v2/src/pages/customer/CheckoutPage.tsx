@@ -59,7 +59,8 @@ export default function CheckoutPage() {
 
     try {
       const order = await orderService.placeOrder({
-        guestInfo: { name: name.trim(), phone: phone.trim() },
+        guestName: name.trim(),
+        guestPhone: phone.trim(),
         vendorId,
         mallId,
         tableId,

@@ -49,10 +49,18 @@ export const assignMallAdmin = async (
       return;
     }
 
+    // Check the current role before upsert so we don't downgrade SUPER_ADMIN to ADMIN
+    const existing = await prisma.user.findUnique({
+      where: { auth0Sub },
+      select: { role: true },
+    });
+    const targetRole =
+      existing?.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'ADMIN';
+
     const user = await prisma.user.upsert({
       where: { auth0Sub },
       create: { auth0Sub, email, name, role: 'ADMIN' },
-      update: { role: 'ADMIN' },
+      update: { email, name, role: targetRole },
     });
 
     const mallAdmin = await prisma.mallAdmin.create({

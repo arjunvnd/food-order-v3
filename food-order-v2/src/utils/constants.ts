@@ -21,12 +21,10 @@ export const WS_EVENTS = {
 
 // Order status labels for display
 export const ORDER_STATUS_LABELS: Record<string, string> = {
-  pending_payment: "Pending Payment",
-  paid: "Paid",
-  accepted: "Accepted",
-  rejected: "Rejected",
-  preparing: "Preparing",
-  completed: "Completed",
+  PENDING: "Pending",
+  ACCEPTED: "Accepted",
+  REJECTED: "Rejected",
+  COMPLETED: "Completed",
 };
 
 // Order status colors for MUI chips
@@ -34,10 +32,8 @@ export const ORDER_STATUS_COLORS: Record<
   string,
   "default" | "warning" | "success" | "error" | "info" | "primary"
 > = {
-  pending_payment: "default",
-  paid: "info",
-  accepted: "primary",
-  rejected: "error",
-  preparing: "warning",
-  completed: "success",
+  PENDING: "warning",
+  ACCEPTED: "primary",
+  REJECTED: "error",
+  COMPLETED: "success",
 };
