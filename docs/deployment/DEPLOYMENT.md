@@ -2,11 +2,11 @@
 
 This monorepo contains three apps deployed across two platforms:
 
-| App | Platform | URL |
-|-----|----------|-----|
-| `food-order-dashboard-be` + `food-order-v2` | **Render** (single service) | `https://<your-app>.onrender.com` |
-| `food-order-landing` | **Vercel** | `https://<your-landing>.vercel.app` |
-| PostgreSQL | **Neon** | managed, no public URL |
+| App                                         | Platform                    | URL                                 |
+| ------------------------------------------- | --------------------------- | ----------------------------------- |
+| `food-order-dashboard-be` + `food-order-v2` | **Render** (single service) | `https://<your-app>.onrender.com`   |
+| `food-order-landing`                        | **Vercel**                  | `https://<your-landing>.vercel.app` |
+| PostgreSQL                                  | **Neon**                    | managed, no public URL              |
 
 ---
 
@@ -25,12 +25,12 @@ At build time, Vite compiles the React app into a static `food-order-v2/dist/` f
 The relevant code block in `food-order-dashboard-be/src/app.ts`:
 
 ```ts
-if (config.nodeEnv === 'production') {
-  const frontendDist = path.resolve(__dirname, '../../food-order-v2/dist');
+if (config.nodeEnv === "production") {
+  const frontendDist = path.resolve(__dirname, "../../food-order-v2/dist");
   app.use(express.static(frontendDist));
-  app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) return next();
-    res.sendFile(path.join(frontendDist, 'index.html'));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) return next();
+    res.sendFile(path.join(frontendDist, "index.html"));
   });
 }
 ```
@@ -69,29 +69,29 @@ Complete these steps once before the first deploy. Work through them in order �
 - [ ] Leave **Root Directory** blank (Render needs the monorepo root)
 - [ ] Set the following:
 
-  | Field | Value |
-  |-------|-------|
-  | **Build Command** | `npm install && cd food-order-dashboard-be && npx prisma generate && cd .. && npm run build` |
-  | **Pre-Deploy Command** | `cd food-order-dashboard-be && npx prisma migrate deploy` |
-  | **Start Command** | `cd food-order-dashboard-be && node dist/server.js` |
+  | Field                  | Value                                                                                        |
+  | ---------------------- | -------------------------------------------------------------------------------------------- |
+  | **Build Command**      | `npm install && cd food-order-dashboard-be && npx prisma generate && cd .. && npm run build` |
+  | **Pre-Deploy Command** | `cd food-order-dashboard-be && npx prisma migrate deploy`                                    |
+  | **Start Command**      | `cd food-order-dashboard-be && node dist/server.js`                                          |
 
 - [ ] Add **Environment Variables** on Render:
 
-  | Key | Value / Notes |
-  |-----|--------------|
-  | `NODE_ENV` | `production` |
-  | `DATABASE_URL` | pooled connection string from Neon |
-  | `AUTH0_DOMAIN` | e.g. `your-tenant.us.auth0.com` |
-  | `AUTH0_AUDIENCE` | e.g. `https://food-order-app/api` |
-  | `AUTH0_CLIENT_ID` | SPA client ID from Auth0 |
-  | `AUTH0_MGMT_CLIENT_ID` | M2M app client ID |
-  | `AUTH0_MGMT_CLIENT_SECRET` | M2M app client secret |
-  | `FRONTEND_URL` | your Render URL (set after first deploy, used for CORS in dev fallback) |
-  | `VITE_AUTH0_DOMAIN` | same as `AUTH0_DOMAIN` — read by Vite at build time |
-  | `VITE_AUTH0_CLIENT_ID` | same as `AUTH0_CLIENT_ID` — read by Vite at build time |
-  | `VITE_AUTH0_AUDIENCE` | same as `AUTH0_AUDIENCE` — read by Vite at build time |
-  | `VITE_API_BASE_URL` | `/api` — relative, works same-origin |
-  | `VITE_WS_URL` | `wss://<your-app>.onrender.com` — set after first deploy |
+  | Key                        | Value / Notes                                                           |
+  | -------------------------- | ----------------------------------------------------------------------- |
+  | `NODE_ENV`                 | `production`                                                            |
+  | `DATABASE_URL`             | pooled connection string from Neon                                      |
+  | `AUTH0_DOMAIN`             | e.g. `your-tenant.us.auth0.com`                                         |
+  | `AUTH0_AUDIENCE`           | e.g. `https://food-order-app/api`                                       |
+  | `AUTH0_CLIENT_ID`          | SPA client ID from Auth0                                                |
+  | `AUTH0_MGMT_CLIENT_ID`     | M2M app client ID                                                       |
+  | `AUTH0_MGMT_CLIENT_SECRET` | M2M app client secret                                                   |
+  | `FRONTEND_URL`             | your Render URL (set after first deploy, used for CORS in dev fallback) |
+  | `VITE_AUTH0_DOMAIN`        | same as `AUTH0_DOMAIN` — read by Vite at build time                     |
+  | `VITE_AUTH0_CLIENT_ID`     | same as `AUTH0_CLIENT_ID` — read by Vite at build time                  |
+  | `VITE_AUTH0_AUDIENCE`      | same as `AUTH0_AUDIENCE` — read by Vite at build time                   |
+  | `VITE_API_BASE_URL`        | `/api` — relative, works same-origin                                    |
+  | `VITE_WS_URL`              | `wss://<your-app>.onrender.com` — set after first deploy                |
 
 - [ ] Deploy and note your Render URL (e.g. `https://food-order-xyz.onrender.com`)
 - [ ] Go back and fill in `FRONTEND_URL` and `VITE_WS_URL` with that URL, then redeploy
@@ -106,8 +106,8 @@ Complete these steps once before the first deploy. Work through them in order �
 - [ ] Vercel auto-detects Next.js — no build command changes needed
 - [ ] Add environment variables if needed:
 
-  | Key | Value |
-  |-----|-------|
+  | Key              | Value                                             |
+  | ---------------- | ------------------------------------------------- |
   | `RESEND_API_KEY` | from https://resend.com (for contact form emails) |
 
 - [ ] Deploy and note your Vercel URL
@@ -124,11 +124,11 @@ Complete these steps once before the first deploy. Work through them in order �
 - [ ] In your GitHub repo: **Settings → Secrets and variables → Actions → New repository secret**
 - [ ] Add these four secrets:
 
-  | Secret Name | Where to get it |
-  |-------------|----------------|
-  | `RENDER_DEPLOY_HOOK_URL` | Render dashboard → your service → Settings → Deploy Hook |
-  | `VERCEL_TOKEN` | https://vercel.com → Account Settings → Tokens → Create |
-  | `VERCEL_ORG_ID` | `orgId` field from `food-order-landing/.vercel/project.json` |
+  | Secret Name                 | Where to get it                                                  |
+  | --------------------------- | ---------------------------------------------------------------- |
+  | `RENDER_DEPLOY_HOOK_URL`    | Render dashboard → your service → Settings → Deploy Hook         |
+  | `VERCEL_TOKEN`              | https://vercel.com → Account Settings → Tokens → Create          |
+  | `VERCEL_ORG_ID`             | `orgId` field from `food-order-landing/.vercel/project.json`     |
   | `VERCEL_PROJECT_ID_LANDING` | `projectId` field from `food-order-landing/.vercel/project.json` |
 
 ### 5. Auth0
@@ -166,10 +166,10 @@ After deploying, check these in order:
 
 ## Known Limitations (Free Tier)
 
-| Limitation | Detail |
-|-----------|--------|
-| **Render cold start** | Free services sleep after 15 min of inactivity. First request after sleep takes ~30–50 s to respond. Socket.io clients reconnect automatically. |
-| **Neon storage** | 0.5 GB on free tier, 1 project max |
-| **File uploads** | `uploads/` is stored on Render's ephemeral disk — files are wiped on each deploy/restart. Migrate to Cloudinary or S3 when file persistence is needed. |
-| **Render build minutes** | 500 free build minutes/month. Each deploy takes ~3–5 min, so ~100 deploys/month before limits. |
-| **GitHub Actions minutes** | 2,000 free minutes/month on private personal repos. Ample for this use case. |
+| Limitation                 | Detail                                                                                                                                                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Render cold start**      | Free services sleep after 15 min of inactivity. First request after sleep takes ~30–50 s to respond. Socket.io clients reconnect automatically.        |
+| **Neon storage**           | 0.5 GB on free tier, 1 project max                                                                                                                     |
+| **File uploads**           | `uploads/` is stored on Render's ephemeral disk — files are wiped on each deploy/restart. Migrate to Cloudinary or S3 when file persistence is needed. |
+| **Render build minutes**   | 500 free build minutes/month. Each deploy takes ~3–5 min, so ~100 deploys/month before limits.                                                         |
+| **GitHub Actions minutes** | 2,000 free minutes/month on private personal repos. Ample for this use case.                                                                           |
