@@ -1,0 +1,17 @@
+name: Deploy — Backend + Dashboard (Render)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Trigger Render Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        run: |
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" \
+            --fail \
+            --silent \
+            --show-error
+          echo "Deploy triggered successfully"
