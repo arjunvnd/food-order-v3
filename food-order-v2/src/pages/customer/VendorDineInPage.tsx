@@ -66,7 +66,6 @@ export default function VendorDineInPage() {
   };
 
   const availableItems = menuItems.filter((i) => i.isAvailable);
-  //   const availableItems = menuItems;
 
   return (
     <Box>

@@ -53,6 +53,11 @@ const globalRateLimiter = rateLimit({
 });
 app.use(globalRateLimiter);
 
+// Health check — used by Render and monitoring tools
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/public', publicRoutes);
@@ -61,6 +66,16 @@ app.use('/api/vendor', vendorRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/super-admin', superAdminRoutes);
+
+// Serve React dashboard in production (combined deploy on Render)
+if (config.nodeEnv === 'production') {
+  const frontendDist = path.resolve(__dirname, '../../food-order-v2/dist');
+  app.use(express.static(frontendDist));
+  app.get('/{*splat}', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
 
 // Global error handler (must be last)
 app.use(errorHandler);

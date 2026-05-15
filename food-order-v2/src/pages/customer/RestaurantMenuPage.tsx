@@ -67,7 +67,7 @@ export default function RestaurantMenuPage() {
       addItem({
         menuItem: item,
         vendorId: restaurantId,
-        vendorName: vendor.name,
+        vendorName: vendor.name ?? vendor.restaurantName,
       }),
     );
   };

@@ -21,14 +21,18 @@ export const menuService = {
     return res.data;
   },
 
-  async createMenu(data: { vendorId: string; name: string }): Promise<Menu> {
+  async createMenu(data: {
+    vendorId: string;
+    name: string;
+    description?: string;
+  }): Promise<Menu> {
     const res = await api.post<Menu>("/vendor/menus", data);
     return res.data;
   },
 
   async updateMenu(
     menuId: string,
-    data: Partial<Pick<Menu, "name">>,
+    data: Partial<Pick<Menu, "name" | "description">>,
   ): Promise<Menu> {
     const res = await api.put<Menu>(`/vendor/menus/${menuId}`, data);
     return res.data;

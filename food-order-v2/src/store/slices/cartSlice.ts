@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import type { CartItem, CartState, MenuItem, OrderType } from "../../types";
+import type { CartItem, CartState, MenuItem } from "../../types";
 
 const CART_STORAGE_KEY = "food_order_cart";
 
