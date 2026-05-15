@@ -41,7 +41,7 @@ export default function VendorProfilePage() {
   useEffect(() => {
     if (!vendorId) return;
     restaurantService
-      .getVendorById(vendorId)
+      .getVendorProfile()
       .then((v) => {
         setVendor(v);
         setName(v.restaurantName);
@@ -111,7 +111,8 @@ export default function VendorProfilePage() {
       </Typography>
       {isSetupMode && (
         <Typography variant="body2" color="text.secondary" mb={3}>
-          Welcome! Please fill in your restaurant details before you start managing orders.
+          Welcome! Please fill in your restaurant details before you start
+          managing orders.
         </Typography>
       )}
 

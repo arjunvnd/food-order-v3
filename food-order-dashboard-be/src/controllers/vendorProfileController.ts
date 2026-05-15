@@ -2,6 +2,31 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
 
 /**
+ * GET /api/vendor/profile
+ * Returns the authenticated vendor's full profile.
+ */
+export const getVendorProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const vendorId = req.user!.vendorId!;
+    const vendor = await prisma.vendor.findUnique({
+      where: { id: vendorId },
+      include: { user: { select: { email: true, name: true } } },
+    });
+    if (!vendor) {
+      res.status(404).json({ message: 'Vendor profile not found' });
+      return;
+    }
+    res.json(vendor);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * PUT /api/vendor/profile
  * Allows the authenticated vendor to update their restaurant profile.
  * Optionally accepts a logo file upload (handled by Multer middleware before this).
@@ -23,7 +48,9 @@ export const updateVendorProfile = async (
         ...(name !== undefined ? { restaurantName: name } : {}),
         ...(description !== undefined ? { description } : {}),
         ...(cuisineType !== undefined ? { cuisineType } : {}),
-        ...(isActive !== undefined ? { isActive: isActive === 'true' || isActive === true } : {}),
+        ...(isActive !== undefined
+          ? { isActive: isActive === 'true' || isActive === true }
+          : {}),
         ...(logoFile ? { logoUrl: `/uploads/${logoFile.filename}` } : {}),
         isProfileComplete: true,
       },

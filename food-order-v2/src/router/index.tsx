@@ -14,6 +14,9 @@ import RestaurantMenuPage from "../pages/customer/RestaurantMenuPage";
 import CartPage from "../pages/customer/CartPage";
 import CheckoutPage from "../pages/customer/CheckoutPage";
 import OrderTrackingPage from "../pages/customer/OrderTrackingPage";
+import QRScanPage from "../pages/customer/QRScanPage";
+import VendorDineInPage from "../pages/customer/VendorDineInPage";
+import VendorTakeawayPage from "../pages/customer/VendorTakeawayPage";
 
 // Vendor
 import VendorDashboard from "../pages/vendor/VendorDashboard";
@@ -30,6 +33,10 @@ import AdminDashboard from "../pages/admin/AdminDashboard";
 import VendorsPage from "../pages/admin/VendorsPage";
 import InviteVendorPage from "../pages/admin/InviteVendorPage";
 import VendorDetailPage from "../pages/admin/VendorDetailPage";
+import AdminTablesPage from "../pages/admin/AdminTablesPage";
+
+// Vendor — QR
+import VendorTablesPage from "../pages/vendor/VendorTablesPage";
 
 const router = createBrowserRouter([
   // ─── Root ──────────────────────────────────────────────────────────────────
@@ -47,6 +54,9 @@ const router = createBrowserRouter([
   {
     element: <AppLayout variant="customer" />,
     children: [
+      // QR scan entry point — handles all venue types
+      { path: "/scan/:qrToken", element: <QRScanPage /> },
+      // Mall / food court flow
       {
         path: "/mall/:mallId/table/:tableId",
         element: <TablePage />,
@@ -54,6 +64,16 @@ const router = createBrowserRouter([
       {
         path: "/mall/:mallId/table/:tableId/restaurant/:restaurantId",
         element: <RestaurantMenuPage />,
+      },
+      // Standalone restaurant dine-in (table belongs to the vendor)
+      {
+        path: "/restaurant/:vendorId/table/:tableId",
+        element: <VendorDineInPage />,
+      },
+      // Takeaway counter (no table)
+      {
+        path: "/restaurant/:vendorId/takeaway",
+        element: <VendorTakeawayPage />,
       },
       { path: "/cart", element: <CartPage /> },
       { path: "/checkout", element: <CheckoutPage /> },
@@ -87,6 +107,7 @@ const router = createBrowserRouter([
         path: "/vendor/menus/:menuId/items/:itemId/edit",
         element: <MenuItemFormPage />,
       },
+      { path: "/vendor/tables", element: <VendorTablesPage /> },
     ],
   },
 
@@ -104,6 +125,7 @@ const router = createBrowserRouter([
       { path: "/admin/vendors", element: <VendorsPage /> },
       { path: "/admin/vendors/invite", element: <InviteVendorPage /> },
       { path: "/admin/vendors/:vendorId", element: <VendorDetailPage /> },
+      { path: "/admin/tables", element: <AdminTablesPage /> },
     ],
   },
 ]);

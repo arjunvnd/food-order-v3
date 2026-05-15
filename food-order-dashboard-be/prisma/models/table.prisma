@@ -1,14 +1,17 @@
 model Table {
     id          String   @id @default(uuid())
     tableNumber String
-    mallId      String
+    mallId      String?
+    vendorId    String?
     qrToken     String   @unique @default(uuid())
     isActive    Boolean  @default(true)
-    mall        Mall     @relation(fields: [mallId], references: [id])
+    mall        Mall?    @relation(fields: [mallId], references: [id])
+    vendor      Vendor?  @relation(fields: [vendorId], references: [id])
     orders      Order[]
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
 
     @@unique([tableNumber, mallId])
+    @@unique([tableNumber, vendorId])
     @@map("tables")
 }

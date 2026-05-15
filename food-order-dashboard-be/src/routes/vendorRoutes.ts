@@ -22,7 +22,18 @@ import {
   rejectOrder,
   completeOrder,
 } from '../controllers/vendorOrderController';
-import { updateVendorProfile } from '../controllers/vendorProfileController';
+import {
+  updateVendorProfile,
+  getVendorProfile,
+} from '../controllers/vendorProfileController';
+import {
+  vendorGetTables,
+  vendorCreateTable,
+  vendorUpdateTable,
+  vendorDeleteTable,
+  vendorRotateQrToken,
+  vendorRotateCounterQr,
+} from '../controllers/tableController';
 
 const router = Router();
 
@@ -30,6 +41,7 @@ const router = Router();
 router.use(requireAuth, requireRole('VENDOR'));
 
 // Profile
+router.get('/profile', getVendorProfile);
 router.put('/profile', upload.single('logo'), updateVendorProfile);
 
 // Menus
@@ -51,5 +63,15 @@ router.get('/orders', getVendorOrders);
 router.patch('/orders/:orderId/accept', acceptOrder);
 router.patch('/orders/:orderId/reject', rejectOrder);
 router.patch('/orders/:orderId/complete', completeOrder);
+
+// Tables (standalone & takeaway vendors manage their own tables)
+router.get('/tables', vendorGetTables);
+router.post('/tables', vendorCreateTable);
+router.put('/tables/:tableId', vendorUpdateTable);
+router.delete('/tables/:tableId', vendorDeleteTable);
+router.patch('/tables/:tableId/rotate-qr', vendorRotateQrToken);
+
+// Counter QR (takeaway vendors — vendor-level QR for the counter)
+router.patch('/qr-token', vendorRotateCounterQr);
 
 export default router;

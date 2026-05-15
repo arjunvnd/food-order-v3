@@ -27,6 +27,8 @@ createRoot(document.getElementById("root")!).render(
         redirect_uri: window.location.origin + "/auth/callback",
         audience: import.meta.env.VITE_AUTH0_AUDIENCE as string,
       }}
+      useRefreshTokens={true}
+      cacheLocation="localstorage"
     >
       <Provider store={store}>
         <ThemeProvider theme={theme}>

@@ -64,6 +64,10 @@ export const listMallVendors = async (
         restaurantName: true,
         description: true,
         logoUrl: true,
+        cuisineType: true,
+        mallId: true,
+        vendorType: true,
+        qrToken: true,
       },
     });
     res.json(vendors);
@@ -82,13 +86,16 @@ export const getVendorDetail = async (
     const vendorId = req.params.vendorId as string;
     console.log('vendorId', vendorId);
     const vendor = await prisma.vendor.findFirst({
-      where: { id: vendorId, isActive: true },
+      where: { id: vendorId },
       select: {
         id: true,
         restaurantName: true,
         description: true,
         logoUrl: true,
+        cuisineType: true,
         mallId: true,
+        vendorType: true,
+        qrToken: true,
       },
     });
     if (!vendor) {
@@ -120,15 +127,89 @@ export const getVendorActiveMenu = async (
             price: true,
             description: true,
             imageUrl: true,
+            isAvailable: true,
           },
         },
       },
     });
     if (!menu) {
-      res.status(404).json({ message: 'No active menu found for this vendor' });
+      res.json(null);
       return;
     }
-    res.json(menu);
+    res.json({
+      ...menu,
+      items: menu.items.map((item) => ({
+        ...item,
+        price: Number(item.price),
+      })),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/public/scan/:qrToken
+ * Unified QR scan resolver — handles all venue types.
+ * Checks table QR tokens first (dine-in), then vendor QR tokens (takeaway counter).
+ * Returns a typed context object so the frontend can route the customer appropriately.
+ */
+export const resolveScanToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const qrToken = req.params.qrToken as string;
+
+    // 1. Check table-level QR — covers mall tables and standalone restaurant tables
+    const table = await prisma.table.findFirst({
+      where: { qrToken, isActive: true },
+      select: {
+        id: true,
+        tableNumber: true,
+        mallId: true,
+        vendorId: true,
+      },
+    });
+
+    if (table) {
+      if (table.mallId) {
+        res.json({
+          type: 'MALL_TABLE',
+          tableId: table.id,
+          tableNumber: table.tableNumber,
+          mallId: table.mallId,
+        });
+        return;
+      }
+      if (table.vendorId) {
+        res.json({
+          type: 'VENDOR_TABLE',
+          tableId: table.id,
+          tableNumber: table.tableNumber,
+          vendorId: table.vendorId,
+        });
+        return;
+      }
+    }
+
+    // 2. Check vendor-level QR — covers takeaway counter scans
+    const vendor = await prisma.vendor.findFirst({
+      where: { qrToken, isActive: true },
+      select: { id: true, restaurantName: true },
+    });
+
+    if (vendor) {
+      res.json({
+        type: 'VENDOR_COUNTER',
+        vendorId: vendor.id,
+        restaurantName: vendor.restaurantName,
+      });
+      return;
+    }
+
+    res.status(404).json({ message: 'Invalid or expired QR code' });
   } catch (error) {
     next(error);
   }

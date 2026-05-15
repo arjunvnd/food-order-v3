@@ -64,6 +64,9 @@ export default function Navbar({ variant }: Props) {
             <Button color="inherit" component={RouterLink} to="/vendor/menus">
               Menus
             </Button>
+            <Button color="inherit" component={RouterLink} to="/vendor/tables">
+              QR Codes
+            </Button>
             <Button color="inherit" component={RouterLink} to="/vendor/profile">
               Profile
             </Button>
@@ -74,6 +77,9 @@ export default function Navbar({ variant }: Props) {
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button color="inherit" component={RouterLink} to="/admin/vendors">
               Vendors
+            </Button>
+            <Button color="inherit" component={RouterLink} to="/admin/tables">
+              Tables
             </Button>
           </Box>
         )}

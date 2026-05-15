@@ -15,3 +15,14 @@ enum PaymentStatus {
     UNPAID
     PAID
 }
+
+enum VendorType {
+    MALL_VENDOR
+    STANDALONE
+    TAKEAWAY
+}
+
+enum OrderType {
+    DINE_IN
+    TAKEAWAY
+}
