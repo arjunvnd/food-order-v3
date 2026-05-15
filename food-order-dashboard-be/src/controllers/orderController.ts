@@ -23,14 +23,16 @@ export const placeOrder = async (
     const {
       tableId,
       vendorId,
+      orderType = 'DINE_IN',
       items,
       guestName,
       guestPhone,
       guestSessionId,
       notes,
     }: {
-      tableId: string;
+      tableId?: string;
       vendorId: string;
+      orderType?: 'DINE_IN' | 'TAKEAWAY';
       items: CartItem[];
       guestName?: string;
       guestPhone?: string;
@@ -43,12 +45,21 @@ export const placeOrder = async (
       return;
     }
 
+    if (orderType === 'DINE_IN' && !tableId) {
+      res
+        .status(400)
+        .json({ message: 'tableId is required for dine-in orders' });
+      return;
+    }
+
     const [table, vendor] = await Promise.all([
-      prisma.table.findFirst({ where: { id: tableId, isActive: true } }),
+      tableId
+        ? prisma.table.findFirst({ where: { id: tableId, isActive: true } })
+        : Promise.resolve(null),
       prisma.vendor.findFirst({ where: { id: vendorId, isActive: true } }),
     ]);
 
-    if (!table) {
+    if (orderType === 'DINE_IN' && !table) {
       res.status(400).json({ message: 'Invalid or inactive table' });
       return;
     }
@@ -85,7 +96,8 @@ export const placeOrder = async (
     const order = await prisma.order.create({
       data: {
         vendorId,
-        tableId,
+        tableId: tableId ?? null,
+        orderType,
         guestName,
         guestPhone,
         guestSessionId,

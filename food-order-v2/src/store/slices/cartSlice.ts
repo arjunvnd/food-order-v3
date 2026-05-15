@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import type { CartItem, CartState, MenuItem } from "../../types";
+import type { CartItem, CartState, MenuItem, OrderType } from "../../types";
 
 const CART_STORAGE_KEY = "food_order_cart";
 
@@ -17,6 +17,7 @@ function loadFromStorage(): CartState {
     vendorName: null,
     mallId: null,
     tableId: null,
+    orderType: "DINE_IN",
   };
 }
 
@@ -40,6 +41,32 @@ const cartSlice = createSlice({
     ) {
       state.mallId = action.payload.mallId;
       state.tableId = action.payload.tableId;
+      state.orderType = "DINE_IN";
+      saveToStorage(state);
+    },
+
+    // For standalone restaurant dine-in (table belongs to a vendor, not a mall)
+    setVendorTableContext(
+      state,
+      action: PayloadAction<{ vendorId: string; tableId: string }>,
+    ) {
+      state.mallId = null;
+      state.vendorId = action.payload.vendorId;
+      state.tableId = action.payload.tableId;
+      state.orderType = "DINE_IN";
+      saveToStorage(state);
+    },
+
+    // For takeaway counter scan (no table)
+    setTakeawayContext(
+      state,
+      action: PayloadAction<{ vendorId: string; vendorName: string }>,
+    ) {
+      state.mallId = null;
+      state.tableId = null;
+      state.vendorId = action.payload.vendorId;
+      state.vendorName = action.payload.vendorName;
+      state.orderType = "TAKEAWAY";
       saveToStorage(state);
     },
 
@@ -108,6 +135,8 @@ const cartSlice = createSlice({
 
 export const {
   setTableContext,
+  setVendorTableContext,
+  setTakeawayContext,
   addItem,
   removeItem,
   updateQuantity,

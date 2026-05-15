@@ -19,9 +19,8 @@ import { PAYMENT_CODE } from "../../utils/constants";
 export default function CheckoutPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { items, vendorId, vendorName, mallId, tableId } = useAppSelector(
-    (s) => s.cart,
-  );
+  const { items, vendorId, vendorName, mallId, tableId, orderType } =
+    useAppSelector((s) => s.cart);
   const total = selectCartTotal(items);
 
   const [name, setName] = useState("");
@@ -49,7 +48,11 @@ export default function CheckoutPage() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    if (!vendorId || !mallId || !tableId) {
+    if (!vendorId) {
+      setError("Session expired. Please scan your QR code again.");
+      return;
+    }
+    if (orderType === "DINE_IN" && !tableId) {
       setError("Session expired. Please scan your table QR again.");
       return;
     }
@@ -64,6 +67,7 @@ export default function CheckoutPage() {
         vendorId,
         mallId,
         tableId,
+        orderType,
         items: orderService.buildOrderItems(items),
       });
 

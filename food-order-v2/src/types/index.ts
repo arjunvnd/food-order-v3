@@ -2,6 +2,22 @@
 
 export type UserRole = "vendor" | "admin";
 
+// ─── Venue / Context types ───────────────────────────────────────────────────
+
+export type VendorType = "MALL_VENDOR" | "STANDALONE" | "TAKEAWAY";
+export type OrderType = "DINE_IN" | "TAKEAWAY";
+
+// Discriminated union returned by GET /api/public/scan/:qrToken
+export type ScanResult =
+  | { type: "MALL_TABLE"; tableId: string; tableNumber: string; mallId: string }
+  | {
+      type: "VENDOR_TABLE";
+      tableId: string;
+      tableNumber: string;
+      vendorId: string;
+    }
+  | { type: "VENDOR_COUNTER"; vendorId: string; restaurantName: string };
+
 // ─── Mall / Table ─────────────────────────────────────────────────────────────
 
 export interface Mall {
@@ -11,8 +27,11 @@ export interface Mall {
 
 export interface Table {
   id: string;
-  mallId: string;
+  mallId: string | null;
+  vendorId: string | null;
   tableNumber: string;
+  qrToken: string;
+  isActive: boolean;
 }
 
 // ─── Vendor ───────────────────────────────────────────────────────────────────
@@ -27,7 +46,9 @@ export interface Vendor {
   isActive: boolean;
   isProfileComplete: boolean;
   userId: string;
-  mallId: string;
+  mallId: string | null;
+  vendorType: VendorType;
+  qrToken: string | null;
 }
 
 // ─── Menu ─────────────────────────────────────────────────────────────────────
@@ -39,6 +60,7 @@ export interface Menu {
   description: string;
   isActive: boolean;
   createdAt: string;
+  items?: MenuItem[];
 }
 
 // ─── Menu Item ────────────────────────────────────────────────────────────────
@@ -66,6 +88,7 @@ export interface CartState {
   vendorName: string | null;
   mallId: string | null;
   tableId: string | null;
+  orderType: OrderType;
 }
 
 // ─── Guest ────────────────────────────────────────────────────────────────────
@@ -92,9 +115,10 @@ export interface Order {
   guestPhone: string;
   vendorId: string;
   vendorName: string;
-  mallId: string;
-  tableId: string;
-  tableNumber: string;
+  mallId: string | null;
+  tableId: string | null;
+  tableNumber: string | null;
+  orderType: OrderType;
   items: OrderItem[];
   totalAmount: number;
   status: OrderStatus;

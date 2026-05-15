@@ -1,7 +1,17 @@
 import api from "./api";
-import type { Vendor } from "../types";
+import type { Vendor, ScanResult } from "../types";
 
 export const restaurantService = {
+  /**
+   * Unified QR scan resolver — call this on the /scan/:qrToken page.
+   * Returns a typed context (MALL_TABLE, VENDOR_TABLE, or VENDOR_COUNTER)
+   * so the UI can navigate to the right flow.
+   */
+  async resolveScanToken(qrToken: string): Promise<ScanResult> {
+    const res = await api.get<ScanResult>(`/public/scan/${qrToken}`);
+    return res.data;
+  },
+
   async getVendorsByMall(mallId: string): Promise<Vendor[]> {
     const res = await api.get<Vendor[]>(`/public/malls/${mallId}/vendors`);
     return res.data;
@@ -9,6 +19,12 @@ export const restaurantService = {
 
   async getVendorById(vendorId: string): Promise<Vendor> {
     const res = await api.get<Vendor>(`/public/vendors/${vendorId}`);
+    return res.data;
+  },
+
+  // Vendor-only: get own full profile (authenticated)
+  async getVendorProfile(): Promise<Vendor> {
+    const res = await api.get<Vendor>(`/vendor/profile`);
     return res.data;
   },
 

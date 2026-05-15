@@ -114,6 +114,13 @@ const menusSlice = createSlice({
           state.activeMenuId = action.payload.id;
           const exists = state.menus.find((m) => m.id === action.payload!.id);
           if (!exists) state.menus.push(action.payload);
+          // Items are embedded by the public endpoint — use them directly
+          // so customer pages never need to call the vendor-auth items endpoint.
+          if (action.payload.items) {
+            state.menuItems = action.payload.items;
+          }
+        } else {
+          state.menuItems = [];
         }
       });
   },

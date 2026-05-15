@@ -1,12 +1,13 @@
 import api from "./api";
-import type { Order, OrderStatus, CartItem } from "../types";
+import type { Order, OrderStatus, OrderType, CartItem } from "../types";
 
 interface PlaceOrderPayload {
   guestName: string;
   guestPhone: string;
   vendorId: string;
-  mallId: string;
-  tableId: string;
+  mallId?: string | null;
+  tableId?: string | null;
+  orderType: OrderType;
   items: Array<{ menuItemId: string; quantity: number }>;
 }
 
