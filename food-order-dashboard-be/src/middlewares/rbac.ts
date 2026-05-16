@@ -33,6 +33,13 @@ export const requireRole = (...roles: Role[]) => {
         return;
       }
 
+      if (user.status === 'PENDING') {
+        res
+          .status(403)
+          .json({ message: 'Account pending approval by a super admin.' });
+        return;
+      }
+
       if (!roles.includes(user.role as Role)) {
         res.status(403).json({ message: 'Forbidden: insufficient role' });
         return;

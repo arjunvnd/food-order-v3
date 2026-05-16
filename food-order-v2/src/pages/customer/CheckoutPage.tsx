@@ -14,7 +14,7 @@ import {
 import { useAppDispatch, useAppSelector } from "../../hooks/useAppStore";
 import { clearCart, selectCartTotal } from "../../store/slices/cartSlice";
 import { orderService } from "../../services/orderService";
-import { PAYMENT_CODE } from "../../utils/constants";
+import { saveActiveOrder } from "../../utils/activeOrder";
 
 export default function CheckoutPage() {
   const dispatch = useAppDispatch();
@@ -25,13 +25,11 @@ export default function CheckoutPage() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [payCode, setPayCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string;
     phone?: string;
-    payCode?: string;
   }>({});
 
   const validate = () => {
@@ -40,8 +38,6 @@ export default function CheckoutPage() {
     if (!phone.trim()) errs.phone = "Phone number is required";
     else if (!/^\+?[\d\s\-]{7,15}$/.test(phone.trim()))
       errs.phone = "Enter a valid phone number";
-    if (!payCode) errs.payCode = "Payment code is required";
-    else if (payCode !== PAYMENT_CODE) errs.payCode = "Invalid payment code";
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -71,7 +67,7 @@ export default function CheckoutPage() {
         items: orderService.buildOrderItems(items),
       });
 
-      await orderService.payOrder(order.id, payCode);
+      saveActiveOrder(order.id);
       dispatch(clearCart());
       navigate(`/orders/${order.id}`, { replace: true });
     } catch (err: unknown) {
@@ -159,23 +155,6 @@ export default function CheckoutPage() {
           fullWidth
         />
       </Stack>
-
-      {/* Payment */}
-      <Typography variant="subtitle1" fontWeight={600} mb={2}>
-        Payment
-      </Typography>
-      <TextField
-        label="Payment Code"
-        value={payCode}
-        onChange={(e) => setPayCode(e.target.value)}
-        error={Boolean(fieldErrors.payCode)}
-        helperText={
-          fieldErrors.payCode ?? "Enter the payment code provided at the table"
-        }
-        fullWidth
-        sx={{ mb: 3 }}
-        inputProps={{ inputMode: "numeric" }}
-      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>

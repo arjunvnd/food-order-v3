@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
-import { emitNewOrder, emitOrderStatus } from '../services/socketService';
+import { emitNewOrder, emitOrderStatus, emitVendorOrderEvent } from '../services/socketService';
 
 interface CartItem {
   menuItemId: string;
@@ -194,7 +194,10 @@ export const payOrder = async (
       data: { paymentStatus: 'PAID' },
     });
 
+    // Notify the customer's order room
     emitOrderStatus(orderId, 'PAID');
+    // Notify the vendor dashboard so they can see payment and prepare the order
+    emitVendorOrderEvent(order.vendorId, orderId, 'PAID');
     res.json(updated);
   } catch (error) {
     next(error);

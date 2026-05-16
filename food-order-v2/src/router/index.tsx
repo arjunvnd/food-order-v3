@@ -1,12 +1,14 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import ProtectedRoute from "../components/common/ProtectedRoute";
 import RoleGuard from "../components/common/RoleGuard";
+import SuperAdminGuard from "../components/common/SuperAdminGuard";
 import AppLayout from "../components/common/AppLayout";
 
 // Auth
 import LoginPage from "../pages/auth/LoginPage";
 import CallbackPage from "../pages/auth/CallbackPage";
 import UnauthorizedPage from "../pages/auth/UnauthorizedPage";
+import RequestAccessPage from "../pages/auth/RequestAccessPage";
 
 // Customer (public / guest)
 import TablePage from "../pages/customer/TablePage";
@@ -14,6 +16,7 @@ import RestaurantMenuPage from "../pages/customer/RestaurantMenuPage";
 import CartPage from "../pages/customer/CartPage";
 import CheckoutPage from "../pages/customer/CheckoutPage";
 import OrderTrackingPage from "../pages/customer/OrderTrackingPage";
+import PaymentPage from "../pages/customer/PaymentPage";
 import QRScanPage from "../pages/customer/QRScanPage";
 import VendorDineInPage from "../pages/customer/VendorDineInPage";
 import VendorTakeawayPage from "../pages/customer/VendorTakeawayPage";
@@ -35,6 +38,11 @@ import InviteVendorPage from "../pages/admin/InviteVendorPage";
 import VendorDetailPage from "../pages/admin/VendorDetailPage";
 import AdminTablesPage from "../pages/admin/AdminTablesPage";
 
+// Super Admin
+import SuperAdminDashboard from "../pages/super-admin/SuperAdminDashboard";
+import SuperAdminUsersPage from "../pages/super-admin/UsersPage";
+import AccessRequestsPage from "../pages/super-admin/AccessRequestsPage";
+
 // Vendor — QR
 import VendorTablesPage from "../pages/vendor/VendorTablesPage";
 
@@ -49,6 +57,15 @@ const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/auth/callback", element: <CallbackPage /> },
   { path: "/unauthorized", element: <UnauthorizedPage /> },
+  // Authenticated but PENDING — no role guard, ProtectedRoute handles the redirect
+  {
+    path: "/request-access",
+    element: (
+      <ProtectedRoute>
+        <RequestAccessPage />
+      </ProtectedRoute>
+    ),
+  },
 
   // ─── Customer / Guest (no auth required) ───────────────────────────────────
   {
@@ -78,6 +95,7 @@ const router = createBrowserRouter([
       { path: "/cart", element: <CartPage /> },
       { path: "/checkout", element: <CheckoutPage /> },
       { path: "/orders/:orderId", element: <OrderTrackingPage /> },
+      { path: "/orders/:orderId/pay", element: <PaymentPage /> },
     ],
   },
 
@@ -115,7 +133,7 @@ const router = createBrowserRouter([
   {
     element: (
       <ProtectedRoute>
-        <RoleGuard role="admin">
+        <RoleGuard role={["admin", "super_admin"]}>
           <AppLayout variant="admin" />
         </RoleGuard>
       </ProtectedRoute>
@@ -126,6 +144,22 @@ const router = createBrowserRouter([
       { path: "/admin/vendors/invite", element: <InviteVendorPage /> },
       { path: "/admin/vendors/:vendorId", element: <VendorDetailPage /> },
       { path: "/admin/tables", element: <AdminTablesPage /> },
+    ],
+  },
+
+  // ─── Super Admin (auth + super admin guard) ─────────────────────────────────
+  {
+    element: (
+      <ProtectedRoute>
+        <SuperAdminGuard>
+          <AppLayout variant="super_admin" />
+        </SuperAdminGuard>
+      </ProtectedRoute>
+    ),
+    children: [
+      { path: "/super-admin", element: <SuperAdminDashboard /> },
+      { path: "/super-admin/users", element: <SuperAdminUsersPage /> },
+      { path: "/super-admin/access-requests", element: <AccessRequestsPage /> },
     ],
   },
 ]);

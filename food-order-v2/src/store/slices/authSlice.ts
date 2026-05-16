@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import type { UserRole } from "../../types";
+import type { UserRole, UserStatus } from "../../types";
 import api from "../../services/api";
 
 interface AuthUser {
@@ -13,6 +13,8 @@ interface AuthUser {
 interface AuthState {
   user: AuthUser | null;
   role: UserRole | null;
+  status: UserStatus | null;
+  isSuperAdmin: boolean;
   vendorId: string | null;
   isProfileComplete: boolean | null;
   isAuthenticated: boolean;
@@ -22,6 +24,8 @@ interface AuthState {
 const initialState: AuthState = {
   user: null,
   role: null,
+  status: null,
+  isSuperAdmin: false,
   vendorId: null,
   isProfileComplete: null,
   isAuthenticated: false,
@@ -33,6 +37,7 @@ interface SyncResponse {
   email: string;
   name: string | null;
   role: "VENDOR" | "ADMIN" | "SUPER_ADMIN";
+  status: "PENDING" | "ACTIVE";
   mallId: string | null;
   vendorId: string | null;
   isProfileComplete: boolean | null;
@@ -48,10 +53,12 @@ export const setAuthUser = createAsyncThunk(
         name: auth0User.name,
       });
 
-      const role: UserRole | null =
-        data.role === "ADMIN" || data.role === "SUPER_ADMIN"
-          ? "admin"
-          : "vendor";
+      const role: UserRole =
+        data.role === "SUPER_ADMIN"
+          ? "super_admin"
+          : data.role === "ADMIN"
+            ? "admin"
+            : "vendor";
 
       return {
         user: {
@@ -61,6 +68,8 @@ export const setAuthUser = createAsyncThunk(
           picture: auth0User.picture as string,
         },
         role,
+        status: data.status,
+        isSuperAdmin: data.role === "SUPER_ADMIN",
         vendorId: data.vendorId,
         isProfileComplete: data.isProfileComplete ?? null,
       };
@@ -82,6 +91,8 @@ const authSlice = createSlice({
     clearAuth(state) {
       state.user = null;
       state.role = null;
+      state.status = null;
+      state.isSuperAdmin = false;
       state.vendorId = null;
       state.isProfileComplete = null;
       state.isAuthenticated = false;
@@ -96,6 +107,8 @@ const authSlice = createSlice({
       .addCase(setAuthUser.fulfilled, (state, action) => {
         state.user = action.payload.user;
         state.role = action.payload.role;
+        state.status = action.payload.status;
+        state.isSuperAdmin = action.payload.isSuperAdmin;
         state.vendorId = action.payload.vendorId;
         state.isProfileComplete = action.payload.isProfileComplete;
         state.isAuthenticated = true;

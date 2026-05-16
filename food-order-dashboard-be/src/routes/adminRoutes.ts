@@ -10,10 +10,12 @@ import {
 } from '../controllers/tableController';
 import {
   listVendors,
+  getVendor,
   inviteVendor,
   onboardVendor,
   resetVendorPassword,
   deactivateVendor,
+  updateVendor,
 } from '../controllers/adminVendorController';
 
 const router = Router();
@@ -31,8 +33,10 @@ router.patch('/tables/:tableId/rotate-qr', rotateQrToken);
 
 // Vendors
 router.get('/vendors', listVendors);
+router.get('/vendors/:vendorId', getVendor);
 router.post('/vendors/invite', inviteVendor);
 router.post('/vendors', onboardVendor);
+router.patch('/vendors/:vendorId', updateVendor);
 router.patch('/vendors/:vendorId/reset-password', resetVendorPassword);
 router.patch('/vendors/:vendorId/deactivate', deactivateVendor);
 

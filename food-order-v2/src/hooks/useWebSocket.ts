@@ -1,93 +1,79 @@
 import { useEffect, useRef } from "react";
+import { io, Socket } from "socket.io-client";
 import { useAppDispatch } from "./useAppStore";
 import { updateOrderStatus, addVendorOrder } from "../store/slices/ordersSlice";
 import { WS_EVENTS } from "../utils/constants";
-import type { Order, OrderStatus } from "../types";
+import type { Order, OrderStatus, PaymentStatus } from "../types";
+import { normalizeOrder } from "../services/orderService";
 
 type SubscriptionTarget =
   | { type: "order"; orderId: string }
   | { type: "vendor"; vendorId: string };
 
-interface WsMessage {
-  event: string;
-  data: unknown;
-}
+// Callbacks so callers (e.g. VendorDashboard) can react to real-time events
+type OnPaymentCallback = (orderId: string) => void;
+type OnNewOrderCallback = (order: Order) => void;
 
-export function useWebSocket(target: SubscriptionTarget, token?: string) {
+export function useWebSocket(
+  target: SubscriptionTarget,
+  token?: string,
+  onPayment?: OnPaymentCallback,
+  onNewOrder?: OnNewOrderCallback,
+) {
   const dispatch = useAppDispatch();
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+
+  const orderId = target.type === "order" ? target.orderId : "";
+  const vendorId = target.type === "vendor" ? target.vendorId : "";
 
   useEffect(() => {
-    const wsUrl = import.meta.env.VITE_WS_URL as string;
-    if (!wsUrl) return;
+    // In production (same-origin Render deploy) VITE_WS_URL can be omitted —
+    // socket.io-client will connect to the page's own origin automatically.
+    const wsUrl =
+      (import.meta.env.VITE_WS_URL as string | undefined) ??
+      window.location.origin;
+    // Don't connect if we don't have the target ID yet
+    if (target.type === "order" && !orderId) return;
+    if (target.type === "vendor" && !vendorId) return;
 
-    let active = true;
+    const socketOptions =
+      target.type === "vendor"
+        ? { auth: { vendorId }, ...(token ? { query: { token } } : {}) }
+        : {};
 
-    function connect() {
-      if (!active) return;
+    const socket = io(wsUrl, socketOptions);
+    socketRef.current = socket;
 
-      const url = token ? `${wsUrl}?token=${encodeURIComponent(token)}` : wsUrl;
-      const ws = new WebSocket(url);
-      wsRef.current = ws;
+    socket.on("connect", () => {
+      if (target.type === "order") {
+        // Customer: join the specific order room
+        socket.emit(WS_EVENTS.JOIN_ORDER, orderId);
+      }
+      // Vendor: server joins the vendor room via handshake auth — no emit needed
+    });
 
-      ws.onopen = () => {
-        const subscribeEvent =
-          target.type === "order"
-            ? {
-                event: WS_EVENTS.SUBSCRIBE_ORDER,
-                data: { orderId: target.orderId },
-              }
-            : {
-                event: WS_EVENTS.SUBSCRIBE_VENDOR,
-                data: { vendorId: target.vendorId },
-              };
-        ws.send(JSON.stringify(subscribeEvent));
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data as string) as WsMessage;
-
-          if (msg.event === WS_EVENTS.ORDER_STATUS_UPDATED) {
-            const { orderId, status } = msg.data as {
-              orderId: string;
-              status: OrderStatus;
-            };
-            dispatch(updateOrderStatus({ orderId, status }));
-          }
-
-          if (msg.event === WS_EVENTS.NEW_ORDER) {
-            dispatch(addVendorOrder(msg.data as Order));
-          }
-        } catch {
-          // ignore malformed messages
+    // Order status change (ACCEPTED, REJECTED, COMPLETED) or payment (PAID)
+    socket.on(
+      WS_EVENTS.ORDER_STATUS,
+      (data: { orderId: string; status: OrderStatus | PaymentStatus }) => {
+        dispatch(updateOrderStatus({ orderId: data.orderId, status: data.status }));
+        if (data.status === "PAID" && onPayment) {
+          onPayment(data.orderId);
         }
-      };
+      },
+    );
 
-      ws.onclose = () => {
-        if (active) {
-          reconnectTimeout.current = setTimeout(connect, 3000);
-        }
-      };
-
-      ws.onerror = () => {
-        ws.close();
-      };
-    }
-
-    connect();
+    // Vendor: new order arrived — normalize from Prisma raw shape before use
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    socket.on(WS_EVENTS.NEW_ORDER, (rawOrder: any) => {
+      const order = normalizeOrder(rawOrder);
+      dispatch(addVendorOrder(order));
+      if (onNewOrder) onNewOrder(order);
+    });
 
     return () => {
-      active = false;
-      if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
-      wsRef.current?.close();
+      socket.disconnect();
+      socketRef.current = null;
     };
-  }, [
-    target.type,
-    "orderId" in target ? target.orderId : "",
-    "vendorId" in target ? target.vendorId : "",
-    token,
-    dispatch,
-  ]);
+  }, [target.type, orderId, vendorId, token, dispatch, onPayment, onNewOrder]);
 }

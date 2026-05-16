@@ -45,6 +45,11 @@ export const restaurantService = {
     return res.data;
   },
 
+  async getAdminVendorById(vendorId: string): Promise<Vendor> {
+    const res = await api.get<Vendor>(`/admin/vendors/${vendorId}`);
+    return res.data;
+  },
+
   async inviteVendor(data: {
     name: string;
     email: string;
@@ -55,7 +60,21 @@ export const restaurantService = {
     return res.data;
   },
 
-  async resetVendorPassword(vendorId: string): Promise<void> {
-    await api.patch(`/admin/vendors/${vendorId}/reset-password`);
+  async resetVendorPassword(vendorId: string, password: string): Promise<void> {
+    await api.patch(`/admin/vendors/${vendorId}/reset-password`, { password });
+  },
+
+  async updateVendor(
+    vendorId: string,
+    data: {
+      restaurantName?: string;
+      description?: string;
+      cuisineType?: string;
+      vendorType?: string;
+      isActive?: boolean;
+    },
+  ): Promise<Vendor> {
+    const res = await api.patch<Vendor>(`/admin/vendors/${vendorId}`, data);
+    return res.data;
   },
 };

@@ -1,16 +1,14 @@
 import { Navigate } from "react-router";
-import { useRole } from "../../hooks/useRole";
-import type { UserRole } from "../../types";
 import { Box, CircularProgress } from "@mui/material";
 import { useAppSelector } from "../../hooks/useAppStore";
 
 interface Props {
-  role: UserRole | UserRole[];
   children: React.ReactNode;
 }
 
-export default function RoleGuard({ role, children }: Props) {
-  const userRole = useRole();
+/** Restricts access to SUPER_ADMIN users only. Must be used inside ProtectedRoute. */
+export default function SuperAdminGuard({ children }: Props) {
+  const isSuperAdmin = useAppSelector((s) => s.auth.isSuperAdmin);
   const isLoading = useAppSelector((s) => s.auth.isLoading);
 
   if (isLoading) {
@@ -26,8 +24,7 @@ export default function RoleGuard({ role, children }: Props) {
     );
   }
 
-  const allowed = Array.isArray(role) ? role : [role];
-  if (!userRole || !allowed.includes(userRole)) {
+  if (!isSuperAdmin) {
     return <Navigate to="/unauthorized" replace />;
   }
 

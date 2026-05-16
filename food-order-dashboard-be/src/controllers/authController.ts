@@ -6,6 +6,7 @@ import { prisma } from '../lib/prisma';
  * POST /api/auth/sync
  * Called by the frontend once after Auth0 login.
  * Upserts the user record using the token's sub claim.
+ * New self-signup users are created with status PENDING until a super admin approves them.
  */
 export const syncUser = async (
   req: Request,
@@ -14,8 +15,6 @@ export const syncUser = async (
 ) => {
   try {
     const auth0Sub = req.auth?.payload.sub as string;
-    // Prefer body values (sent by frontend from the ID token/userinfo)
-    // and fall back to access token claims if present
     const email =
       (req.body?.email as string | undefined) ||
       (req.auth?.payload['email'] as string | undefined);
@@ -34,11 +33,13 @@ export const syncUser = async (
         auth0Sub,
         email: email ?? auth0Sub,
         name: name ?? null,
+        // New self-signups start PENDING — admin-invited users are created with ACTIVE
+        status: 'PENDING',
       },
       update: {
-        // Always overwrite with real values when available so stale auth0Sub emails get fixed
         ...(email ? { email } : {}),
         ...(name ? { name } : {}),
+        // Never downgrade status on re-sync
       },
       include: {
         mallAdmins: { select: { mallId: true } },
@@ -58,10 +59,43 @@ export const syncUser = async (
       email: user.email,
       name: user.name,
       role: user.role,
+      status: user.status,
       mallId: user.mallAdmins[0]?.mallId ?? null,
       vendorId: user.vendor?.id ?? null,
       isProfileComplete: user.vendor?.isProfileComplete ?? null,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/auth/request-access
+ * Authenticated (any role, including PENDING users).
+ * Stores an optional note explaining why the user wants access.
+ * Super admins review these via GET /api/super-admin/access-requests.
+ */
+export const requestAccess = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const auth0Sub = req.auth?.payload.sub as string;
+    if (!auth0Sub) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
+    const note =
+      (req.body?.note as string | undefined)?.trim().slice(0, 500) ?? '';
+
+    await prisma.user.update({
+      where: { auth0Sub },
+      data: { requestNote: note || null },
+    });
+
+    res.json({ message: 'Access request recorded.' });
   } catch (error) {
     next(error);
   }

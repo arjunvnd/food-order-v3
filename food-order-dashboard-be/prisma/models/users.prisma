@@ -1,13 +1,15 @@
 model User {
-    id         String      @id @default(uuid())
-    auth0Sub   String      @unique
-    email      String      @unique
-    name       String?
-    role       Role        @default(VENDOR)
-    vendor     Vendor?
-    mallAdmins MallAdmin[]
-    createdAt  DateTime    @default(now())
-    updatedAt  DateTime    @updatedAt
+    id          String      @id @default(uuid())
+    auth0Sub    String      @unique
+    email       String      @unique
+    name        String?
+    role        Role        @default(VENDOR)
+    status      UserStatus  @default(PENDING)
+    requestNote String?
+    vendor      Vendor?
+    mallAdmins  MallAdmin[]
+    createdAt   DateTime    @default(now())
+    updatedAt   DateTime    @updatedAt
 
     @@map("users")
 }

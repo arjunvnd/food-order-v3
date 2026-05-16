@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { Navigate } from "react-router";
+import { Navigate, useLocation } from "react-router";
 import { Box, CircularProgress } from "@mui/material";
 import { useAppDispatch, useAppSelector } from "../../hooks/useAppStore";
 import { setAuthUser } from "../../store/slices/authSlice";
@@ -15,17 +15,15 @@ export default function ProtectedRoute({ children }: Props) {
     useAuth0();
   const dispatch = useAppDispatch();
   const role = useAppSelector((s) => s.auth.role);
+  const userStatus = useAppSelector((s) => s.auth.status);
   const [bootstrapping, setBootstrapping] = useState(false);
+  const { pathname } = useLocation();
 
   useEffect(() => {
     if (!isAuthenticated || !user) return;
 
-    // Always re-wire the token getter — it lives in module scope and is lost
-    // on every page refresh since it's set in CallbackPage only.
     setTokenGetter(getAccessTokenSilently);
 
-    // If Redux auth state is empty it means the page was refreshed and
-    // CallbackPage never ran. Re-sync with the backend to restore role/vendorId.
     if (!role) {
       setBootstrapping(true);
       dispatch(setAuthUser(user as Record<string, unknown>)).finally(() =>
@@ -49,6 +47,11 @@ export default function ProtectedRoute({ children }: Props) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // PENDING users can only visit /request-access — redirect them everywhere else
+  if (userStatus === "PENDING" && pathname !== "/request-access") {
+    return <Navigate to="/request-access" replace />;
   }
 
   return <>{children}</>;

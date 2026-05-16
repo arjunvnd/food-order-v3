@@ -9,14 +9,14 @@ export const AUTH0_ROLES_CLAIM = "https://food-order/roles";
 // Dummy payment code
 export const PAYMENT_CODE = "1234";
 
-// WebSocket event names
+// WebSocket event names — must match the backend socketService emit names
 export const WS_EVENTS = {
   // Server -> Client
-  ORDER_STATUS_UPDATED: "order:status_updated",
-  NEW_ORDER: "vendor:new_order",
-  // Client -> Server
-  SUBSCRIBE_ORDER: "subscribe:order",
-  SUBSCRIBE_VENDOR: "subscribe:vendor",
+  ORDER_STATUS: "order:status",
+  NEW_ORDER: "order:new",
+  // Client -> Server (customer joins an order room after placing)
+  JOIN_ORDER: "join:order",
+  // Vendor auth is passed via Socket.IO handshake, no join event needed
 } as const;
 
 // Order status labels for display

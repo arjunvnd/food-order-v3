@@ -20,8 +20,16 @@ export default function CallbackPage() {
 
     dispatch(setAuthUser(user as Record<string, unknown>)).then((action) => {
       if (setAuthUser.fulfilled.match(action)) {
-        const { role, isProfileComplete } = action.payload;
-        if (role === "admin") navigate("/admin", { replace: true });
+        const { role, status, isProfileComplete } = action.payload;
+
+        // PENDING users must request access before using the app
+        if (status === "PENDING") {
+          navigate("/request-access", { replace: true });
+          return;
+        }
+
+        if (role === "super_admin" || role === "admin")
+          navigate("/admin", { replace: true });
         else if (role === "vendor") {
           if (isProfileComplete === false) {
             navigate("/vendor/profile?setup=true", { replace: true });

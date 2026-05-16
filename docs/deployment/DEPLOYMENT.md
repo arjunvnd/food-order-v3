@@ -91,7 +91,7 @@ Complete these steps once before the first deploy. Work through them in order �
   | `VITE_AUTH0_CLIENT_ID`     | same as `AUTH0_CLIENT_ID` — read by Vite at build time                  |
   | `VITE_AUTH0_AUDIENCE`      | same as `AUTH0_AUDIENCE` — read by Vite at build time                   |
   | `VITE_API_BASE_URL`        | `/api` — relative, works same-origin                                    |
-  | `VITE_WS_URL`              | `wss://<your-app>.onrender.com` — set after first deploy                |
+  | `VITE_WS_URL`              | *(optional)* `https://<your-app>.onrender.com` — omit this entirely if frontend and backend share the same Render URL (same-origin). If set, must use `https://` not `wss://` — socket.io-client handles the WS upgrade internally. |
 
 - [ ] Deploy and note your Render URL (e.g. `https://food-order-xyz.onrender.com`)
 - [ ] Go back and fill in `FRONTEND_URL` and `VITE_WS_URL` with that URL, then redeploy

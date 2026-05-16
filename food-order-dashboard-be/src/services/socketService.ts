@@ -33,3 +33,8 @@ export const emitNewOrder = (vendorId: string, order: unknown): void => {
 export const emitOrderStatus = (orderId: string, status: string): void => {
   io?.to(`order:${orderId}`).emit('order:status', { orderId, status });
 };
+
+/** Emits an order event to the vendor's room (e.g. payment received) */
+export const emitVendorOrderEvent = (vendorId: string, orderId: string, status: string): void => {
+  io?.to(`vendor:${vendorId}`).emit('order:status', { orderId, status });
+};

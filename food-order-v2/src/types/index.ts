@@ -1,11 +1,12 @@
 // ─── Roles ───────────────────────────────────────────────────────────────────
 
-export type UserRole = "vendor" | "admin";
+export type UserRole = "vendor" | "admin" | "super_admin";
 
 // ─── Venue / Context types ───────────────────────────────────────────────────
 
 export type VendorType = "MALL_VENDOR" | "STANDALONE" | "TAKEAWAY";
 export type OrderType = "DINE_IN" | "TAKEAWAY";
+export type UserStatus = "PENDING" | "ACTIVE";
 
 // Discriminated union returned by GET /api/public/scan/:qrToken
 export type ScanResult =
@@ -39,7 +40,10 @@ export interface Table {
 export interface Vendor {
   id: string;
   restaurantName: string;
-  name?: string; // user.name from join
+  /** Populated when the API includes the user relation */
+  user?: { email: string; name: string | null };
+  /** @deprecated use vendor.user?.name */
+  name?: string;
   description: string | null;
   logoUrl: string | null;
   cuisineType: string | null;
@@ -47,8 +51,12 @@ export interface Vendor {
   isProfileComplete: boolean;
   userId: string;
   mallId: string | null;
+  /** Populated when the API includes the mall relation */
+  mall?: { id: string; name: string } | null;
   vendorType: VendorType;
   qrToken: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // ─── Menu ─────────────────────────────────────────────────────────────────────
@@ -101,6 +109,7 @@ export interface GuestInfo {
 // ─── Order ────────────────────────────────────────────────────────────────────
 
 export type OrderStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "COMPLETED";
+export type PaymentStatus = "UNPAID" | "PAID";
 
 export interface OrderItem {
   menuItemId: string;
@@ -122,6 +131,7 @@ export interface Order {
   items: OrderItem[];
   totalAmount: number;
   status: OrderStatus;
+  paymentStatus: PaymentStatus;
   createdAt: string;
   updatedAt: string;
 }

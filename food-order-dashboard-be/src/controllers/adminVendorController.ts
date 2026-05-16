@@ -19,10 +19,21 @@ export const listVendors = async (
   next: NextFunction,
 ) => {
   try {
-    const mallId = req.user!.mallId!;
+    const { mallId, role } = req.user!;
+
+    // Super admins see all vendors across all malls; regular admins only see their mall's vendors
+    if (role !== 'SUPER_ADMIN' && !mallId) {
+      res.status(400).json({ message: 'Mall not assigned to this admin.' });
+      return;
+    }
+
     const vendors = await prisma.vendor.findMany({
-      where: { mallId },
-      include: { user: { select: { email: true, name: true } } },
+      where: role === 'SUPER_ADMIN' ? {} : { mallId: mallId! },
+      include: {
+        user: { select: { email: true, name: true } },
+        mall: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
     });
     res.json(vendors);
   } catch (error) {
@@ -116,6 +127,7 @@ export const inviteVendor = async (
           email,
           name,
           role: 'VENDOR',
+          status: 'ACTIVE', // admin-invited users are pre-approved
           vendor: {
             create: { mallId, restaurantName, isProfileComplete: false },
           },
@@ -168,6 +180,7 @@ export const onboardVendor = async (
         email,
         name,
         role: 'VENDOR',
+        status: 'ACTIVE', // admin-invited users are pre-approved
         vendor: {
           create: { mallId, restaurantName, description },
         },
@@ -183,7 +196,8 @@ export const onboardVendor = async (
 
 /**
  * PATCH /api/admin/vendors/:vendorId/reset-password
- * Generates an Auth0 password-change ticket and returns the one-time reset URL.
+ * Admin sets a new password for the vendor directly via the Auth0 Management API.
+ * Body: { password: string }
  */
 export const resetVendorPassword = async (
   req: Request,
@@ -191,14 +205,25 @@ export const resetVendorPassword = async (
   next: NextFunction,
 ) => {
   try {
-    const mallId = req.user!.mallId!;
+    const { mallId, role } = req.user!;
     const vendorId = req.params.vendorId as string;
+    const { password } = req.body;
 
-    const vendor = await prisma.vendor.findFirst({
-      where: { id: vendorId, mallId },
-    });
+    if (!password || typeof password !== 'string' || password.length < 8) {
+      res
+        .status(400)
+        .json({ message: 'password must be at least 8 characters' });
+      return;
+    }
+
+    const vendor = await prisma.vendor.findUnique({ where: { id: vendorId } });
     if (!vendor) {
       res.status(404).json({ message: 'Vendor not found' });
+      return;
+    }
+
+    if (role !== 'SUPER_ADMIN' && vendor.mallId !== mallId) {
+      res.status(403).json({ message: 'Forbidden' });
       return;
     }
 
@@ -209,13 +234,104 @@ export const resetVendorPassword = async (
     }
 
     const mgmt = getManagementClient();
-    const ticket = await mgmt.tickets.changePassword({
-      user_id: user.auth0Sub,
-      result_url: `${config.frontendUrl}/login`,
-      mark_email_as_verified: true,
+    await mgmt.users.update(user.auth0Sub, {
+      password,
+      connection: 'Username-Password-Authentication',
     });
 
-    res.json({ resetLink: ticket.ticket });
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** GET /api/admin/vendors/:vendorId */
+export const getVendor = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { mallId, role } = req.user!;
+    const vendorId = req.params.vendorId as string;
+
+    const vendor = await prisma.vendor.findUnique({
+      where: { id: vendorId },
+      include: {
+        user: { select: { email: true, name: true } },
+        mall: { select: { id: true, name: true } },
+      },
+    });
+
+    if (!vendor) {
+      res.status(404).json({ message: 'Vendor not found' });
+      return;
+    }
+
+    if (role !== 'SUPER_ADMIN' && vendor.mallId !== mallId) {
+      res.status(403).json({ message: 'Forbidden' });
+      return;
+    }
+
+    res.json(vendor);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** PATCH /api/admin/vendors/:vendorId
+ * Updates editable vendor fields: restaurantName, description, cuisineType, vendorType, isActive.
+ */
+export const updateVendor = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { mallId, role } = req.user!;
+    const vendorId = req.params.vendorId as string;
+
+    const vendor = await prisma.vendor.findUnique({ where: { id: vendorId } });
+    if (!vendor) {
+      res.status(404).json({ message: 'Vendor not found' });
+      return;
+    }
+
+    // Non-super-admins can only edit vendors in their own mall
+    if (role !== 'SUPER_ADMIN' && vendor.mallId !== mallId) {
+      res.status(403).json({ message: 'Forbidden' });
+      return;
+    }
+
+    const { restaurantName, description, cuisineType, vendorType, isActive } =
+      req.body;
+
+    const VALID_VENDOR_TYPES = new Set([
+      'MALL_VENDOR',
+      'STANDALONE',
+      'TAKEAWAY',
+    ]);
+    if (vendorType !== undefined && !VALID_VENDOR_TYPES.has(vendorType)) {
+      res.status(400).json({ message: 'Invalid vendorType' });
+      return;
+    }
+
+    const updated = await prisma.vendor.update({
+      where: { id: vendorId },
+      data: {
+        ...(restaurantName !== undefined && { restaurantName }),
+        ...(description !== undefined && { description }),
+        ...(cuisineType !== undefined && { cuisineType }),
+        ...(vendorType !== undefined && { vendorType }),
+        ...(isActive !== undefined && { isActive }),
+      },
+      include: {
+        user: { select: { email: true, name: true } },
+        mall: { select: { id: true, name: true } },
+      },
+    });
+
+    res.json(updated);
   } catch (error) {
     next(error);
   }
@@ -228,7 +344,11 @@ export const deactivateVendor = async (
   next: NextFunction,
 ) => {
   try {
-    const mallId = req.user!.mallId!;
+    const mallId = req.user!.mallId;
+    if (!mallId) {
+      res.status(400).json({ message: 'Mall not assigned to this admin.' });
+      return;
+    }
     const vendorId = req.params.vendorId as string;
 
     const vendor = await prisma.vendor.findFirst({

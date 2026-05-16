@@ -4,6 +4,11 @@ enum Role {
     VENDOR
 }
 
+enum UserStatus {
+    PENDING
+    ACTIVE
+}
+
 enum OrderStatus {
     PENDING
     ACCEPTED

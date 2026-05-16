@@ -10,7 +10,11 @@ export const getVendorOrders = async (
   next: NextFunction,
 ) => {
   try {
-    const vendorId = req.user!.vendorId!;
+    const vendorId = req.user!.vendorId;
+    if (!vendorId) {
+      res.status(400).json({ message: 'Vendor profile not set up yet.' });
+      return;
+    }
     const { status, from, to } = req.query;
 
     const validStatuses: OrderStatus[] = [
@@ -57,7 +61,11 @@ const transitionOrderStatus =
   (newStatus: OrderStatus) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const vendorId = req.user!.vendorId!;
+      const vendorId = req.user!.vendorId;
+      if (!vendorId) {
+        res.status(400).json({ message: 'Vendor profile not set up yet.' });
+        return;
+      }
       const orderId = req.params.orderId as string;
 
       const order = await prisma.order.findFirst({

@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import type { Order, OrderStatus } from "../../types";
+import type { Order, OrderStatus, PaymentStatus } from "../../types";
 import { orderService } from "../../services/orderService";
 
 interface OrdersState {
@@ -52,17 +52,26 @@ const ordersSlice = createSlice({
   name: "orders",
   initialState,
   reducers: {
-    // Dispatched by WebSocket handler when an order status changes
+    // Dispatched by WebSocket handler. Handles both OrderStatus and PaymentStatus
+    // updates (backend emits "PAID" as a payment event via the same order:status socket).
     updateOrderStatus(
       state,
-      action: PayloadAction<{ orderId: string; status: OrderStatus }>,
+      action: PayloadAction<{ orderId: string; status: OrderStatus | PaymentStatus }>,
     ) {
       const { orderId, status } = action.payload;
-      if (state.currentOrder?.id === orderId) {
-        state.currentOrder.status = status;
+      if (status === "PAID") {
+        if (state.currentOrder?.id === orderId) {
+          state.currentOrder.paymentStatus = "PAID";
+        }
+        const vendorOrder = state.vendorOrders.find((o) => o.id === orderId);
+        if (vendorOrder) vendorOrder.paymentStatus = "PAID";
+      } else {
+        if (state.currentOrder?.id === orderId) {
+          state.currentOrder.status = status as OrderStatus;
+        }
+        const vendorOrder = state.vendorOrders.find((o) => o.id === orderId);
+        if (vendorOrder) vendorOrder.status = status as OrderStatus;
       }
-      const vendorOrder = state.vendorOrders.find((o) => o.id === orderId);
-      if (vendorOrder) vendorOrder.status = status;
     },
 
     // Dispatched by WebSocket handler when vendor receives a new order
