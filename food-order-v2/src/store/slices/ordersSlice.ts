@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { Order, OrderStatus, PaymentStatus } from "../../types";
 import { orderService } from "../../services/orderService";
+import type { CreateVendorOrderPayload } from "../../services/orderService";
 
 interface OrdersState {
   // Vendor side
@@ -48,6 +49,19 @@ export const fetchVendorOrders = createAsyncThunk(
   },
 );
 
+export const createVendorOrder = createAsyncThunk(
+  "orders/createVendorOrder",
+  async (payload: CreateVendorOrderPayload, { rejectWithValue }) => {
+    try {
+      return await orderService.createVendorOrder(payload);
+    } catch (err: unknown) {
+      return rejectWithValue(
+        err instanceof Error ? err.message : "Failed to create order",
+      );
+    }
+  },
+);
+
 const ordersSlice = createSlice({
   name: "orders",
   initialState,
@@ -56,7 +70,10 @@ const ordersSlice = createSlice({
     // updates (backend emits "PAID" as a payment event via the same order:status socket).
     updateOrderStatus(
       state,
-      action: PayloadAction<{ orderId: string; status: OrderStatus | PaymentStatus }>,
+      action: PayloadAction<{
+        orderId: string;
+        status: OrderStatus | PaymentStatus;
+      }>,
     ) {
       const { orderId, status } = action.payload;
       if (status === "PAID") {
@@ -109,6 +126,12 @@ const ordersSlice = createSlice({
       .addCase(fetchVendorOrders.rejected, (state, action) => {
         state.error = action.payload as string;
         state.isLoading = false;
+      })
+      .addCase(createVendorOrder.fulfilled, (state, action) => {
+        const exists = state.vendorOrders.find(
+          (o) => o.id === action.payload.id,
+        );
+        if (!exists) state.vendorOrders.unshift(action.payload);
       });
   },
 });

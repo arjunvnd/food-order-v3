@@ -110,6 +110,7 @@ export interface GuestInfo {
 
 export type OrderStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "COMPLETED";
 export type PaymentStatus = "UNPAID" | "PAID";
+export type OrderSource = "CUSTOMER" | "VENDOR";
 
 export interface OrderItem {
   menuItemId: string;
@@ -132,6 +133,7 @@ export interface Order {
   totalAmount: number;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  source: OrderSource;
   createdAt: string;
   updatedAt: string;
 }

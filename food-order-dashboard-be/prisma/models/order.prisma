@@ -8,6 +8,7 @@ model Order {
     status         OrderStatus   @default(PENDING)
     paymentStatus  PaymentStatus @default(UNPAID)
     orderType      OrderType     @default(DINE_IN)
+    source         OrderSource   @default(CUSTOMER)
     totalAmount    Decimal       @db.Decimal(10, 2)
     notes          String?
     vendor         Vendor        @relation(fields: [vendorId], references: [id])

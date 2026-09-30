@@ -15,11 +15,14 @@ import {
   Chip,
   Button,
   Paper,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import { useAppDispatch, useAppSelector } from "../../hooks/useAppStore";
 import { fetchVendorOrders } from "../../store/slices/ordersSlice";
 import OrderStatusChip from "../../components/common/OrderStatusChip";
-import type { OrderStatus } from "../../types";
+import type { OrderStatus, OrderSource } from "../../types";
 
 const TABS: { label: string; value: OrderStatus | "all" }[] = [
   { label: "All", value: "all" },
@@ -29,37 +32,73 @@ const TABS: { label: string; value: OrderStatus | "all" }[] = [
   { label: "Rejected", value: "REJECTED" },
 ];
 
+const SOURCE_FILTERS: { label: string; value: OrderSource | "all" }[] = [
+  { label: "All", value: "all" },
+  { label: "QR", value: "CUSTOMER" },
+  { label: "Manual", value: "VENDOR" },
+];
+
 export default function VendorOrdersPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const vendorId = useAppSelector((s) => s.auth.user?.sub ?? "");
+  const vendorId = useAppSelector((s) => s.auth.vendorId ?? "");
   const { vendorOrders, isLoading, error } = useAppSelector((s) => s.orders);
   const [tab, setTab] = useState<OrderStatus | "all">("all");
+  const [sourceFilter, setSourceFilter] = useState<OrderSource | "all">("all");
 
   useEffect(() => {
     if (vendorId) dispatch(fetchVendorOrders({ vendorId }));
   }, [vendorId, dispatch]);
 
-  const filtered =
-    tab === "all" ? vendorOrders : vendorOrders.filter((o) => o.status === tab);
+  const filtered = vendorOrders
+    .filter((o) => tab === "all" || o.status === tab)
+    .filter((o) => sourceFilter === "all" || o.source === sourceFilter);
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} mb={3}>
-        Orders
-      </Typography>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+      >
+        <Typography variant="h5" fontWeight={700}>
+          Orders
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => navigate("/vendor/orders/new")}
+        >
+          New Order
+        </Button>
+      </Box>
 
       <Tabs
         value={tab}
         onChange={(_, v: OrderStatus | "all") => setTab(v)}
         variant="scrollable"
         scrollButtons="auto"
-        sx={{ mb: 3 }}
+        sx={{ mb: 2 }}
       >
         {TABS.map((t) => (
           <Tab key={t.value} label={t.label} value={t.value} />
         ))}
       </Tabs>
+
+      <ToggleButtonGroup
+        value={sourceFilter}
+        exclusive
+        onChange={(_, v: OrderSource | "all" | null) => v && setSourceFilter(v)}
+        size="small"
+        sx={{ mb: 3 }}
+      >
+        {SOURCE_FILTERS.map((f) => (
+          <ToggleButton key={f.value} value={f.value}>
+            {f.label}
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
 
       {isLoading && (
         <Box display="flex" justifyContent="center" mt={4}>
@@ -84,6 +123,7 @@ export default function VendorOrdersPage() {
                 <TableCell>Items</TableCell>
                 <TableCell>Total</TableCell>
                 <TableCell>Status</TableCell>
+                <TableCell>Source</TableCell>
                 <TableCell>Time</TableCell>
                 <TableCell />
               </TableRow>
@@ -107,9 +147,26 @@ export default function VendorOrdersPage() {
                       size="small"
                     />
                   </TableCell>
-                  <TableCell>${order.totalAmount.toFixed(2)}</TableCell>
+                  <TableCell>
+                    $
+                    {typeof order.totalAmount === "string"
+                      ? order.totalAmount
+                      : order.totalAmount.toFixed(2)}
+                  </TableCell>
                   <TableCell>
                     <OrderStatusChip status={order.status} />
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={order.source === "VENDOR" ? "Manual" : "QR"}
+                      size="small"
+                      color={
+                        order.source === "VENDOR" ? "secondary" : "default"
+                      }
+                      variant={
+                        order.source === "VENDOR" ? "filled" : "outlined"
+                      }
+                    />
                   </TableCell>
                   <TableCell>
                     <Typography variant="caption">

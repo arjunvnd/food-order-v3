@@ -26,6 +26,7 @@ import VendorDashboard from "../pages/vendor/VendorDashboard";
 import VendorProfilePage from "../pages/vendor/VendorProfilePage";
 import VendorOrdersPage from "../pages/vendor/VendorOrdersPage";
 import VendorOrderDetailPage from "../pages/vendor/VendorOrderDetailPage";
+import NewOrderPage from "../pages/vendor/NewOrderPage";
 import MenusPage from "../pages/vendor/MenusPage";
 import MenuFormPage from "../pages/vendor/MenuFormPage";
 import MenuItemsPage from "../pages/vendor/MenuItemsPage";
@@ -112,6 +113,7 @@ const router = createBrowserRouter([
       { path: "/vendor", element: <VendorDashboard /> },
       { path: "/vendor/profile", element: <VendorProfilePage /> },
       { path: "/vendor/orders", element: <VendorOrdersPage /> },
+      { path: "/vendor/orders/new", element: <NewOrderPage /> },
       { path: "/vendor/orders/:orderId", element: <VendorOrderDetailPage /> },
       { path: "/vendor/menus", element: <MenusPage /> },
       { path: "/vendor/menus/new", element: <MenuFormPage /> },

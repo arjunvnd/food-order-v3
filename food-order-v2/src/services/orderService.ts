@@ -1,5 +1,12 @@
 import api from "./api";
-import type { Order, OrderStatus, OrderType, PaymentStatus, CartItem } from "../types";
+import type {
+  Order,
+  OrderStatus,
+  OrderType,
+  OrderSource,
+  PaymentStatus,
+  CartItem,
+} from "../types";
 
 // ─── Backend raw shapes ───────────────────────────────────────────────────────
 // The Prisma response nests vendor/table/menuItem objects and uses `unitPrice`.
@@ -25,6 +32,7 @@ interface RawOrder {
   totalAmount: number;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  source: OrderSource;
   createdAt: string;
   updatedAt: string;
   items: RawOrderItem[];
@@ -44,6 +52,7 @@ export function normalizeOrder(raw: RawOrder): Order {
     totalAmount: raw.totalAmount,
     status: raw.status,
     paymentStatus: raw.paymentStatus ?? "UNPAID",
+    source: raw.source ?? "CUSTOMER",
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
     items: (raw.items ?? []).map((item) => ({
@@ -62,6 +71,22 @@ interface PlaceOrderPayload {
   mallId?: string | null;
   tableId?: string | null;
   orderType: OrderType;
+  items: Array<{ menuItemId: string; quantity: number }>;
+}
+
+export interface ActiveMenuItemOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface CreateVendorOrderPayload {
+  orderType: OrderType;
+  tableId?: string | null;
+  guestName?: string;
+  guestPhone?: string;
+  notes?: string;
+  paymentStatus?: PaymentStatus;
   items: Array<{ menuItemId: string; quantity: number }>;
 }
 
@@ -109,7 +134,9 @@ export const orderService = {
     };
     const action = actionMap[status];
     if (!action) throw new Error(`Cannot transition to status ${status}`);
-    const res = await api.patch<RawOrder>(`/vendor/orders/${orderId}/${action}`);
+    const res = await api.patch<RawOrder>(
+      `/vendor/orders/${orderId}/${action}`,
+    );
     return normalizeOrder(res.data);
   },
 
@@ -119,5 +146,19 @@ export const orderService = {
       menuItemId: i.menuItem.id,
       quantity: i.quantity,
     }));
+  },
+
+  // Vendor: fetch active menu's available items, for the manual order item picker
+  async getActiveMenuItemsForOrder(): Promise<ActiveMenuItemOption[]> {
+    const res = await api.get<ActiveMenuItemOption[]>(
+      "/vendor/orders/menu-items",
+    );
+    return res.data;
+  },
+
+  // Vendor: create a manual order (phone-in / parcel / walk-in)
+  async createVendorOrder(payload: CreateVendorOrderPayload): Promise<Order> {
+    const res = await api.post<RawOrder>("/vendor/orders", payload);
+    return normalizeOrder(res.data);
   },
 };

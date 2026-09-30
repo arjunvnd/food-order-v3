@@ -31,3 +31,8 @@ enum OrderType {
     DINE_IN
     TAKEAWAY
 }
+
+enum OrderSource {
+    CUSTOMER
+    VENDOR
+}

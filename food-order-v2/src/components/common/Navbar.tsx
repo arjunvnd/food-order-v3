@@ -30,7 +30,6 @@ import {
   markAllRead,
 } from "../../store/slices/notificationsSlice";
 import { superAdminService } from "../../services/superAdminService";
-import { orderService } from "../../services/orderService";
 
 interface Props {
   variant: "customer" | "vendor" | "admin" | "super_admin";
@@ -46,45 +45,32 @@ export default function Navbar({ variant }: Props) {
   const notifications = useAppSelector((s) => s.notifications.items);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const vendorId = useAppSelector((s) => s.auth.vendorId);
-
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [bellAnchor, setBellAnchor] = useState<null | HTMLElement>(null);
 
   // Super admin: load pending access request count once on mount
   useEffect(() => {
     if (variant !== "super_admin") return;
-    superAdminService.getAccessRequests().then((requests) => {
-      if (requests.length > 0) {
-        dispatch(
-          addNotification({
-            message: `${requests.length} user${requests.length > 1 ? "s" : ""} waiting for access approval`,
-            severity: "warning",
-            link: "/super-admin/access-requests",
-          }),
-        );
-      }
-    }).catch(() => {/* ignore — navbar shouldn't crash */});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    superAdminService
+      .getAccessRequests()
+      .then((requests) => {
+        if (requests.length > 0) {
+          dispatch(
+            addNotification({
+              message: `${requests.length} user${requests.length > 1 ? "s" : ""} waiting for access approval`,
+              severity: "warning",
+              link: "/super-admin/access-requests",
+            }),
+          );
+        }
+      })
+      .catch(() => {
+        /* ignore — navbar shouldn't crash */
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [variant]);
 
-  // Vendor: load pending order count once on mount so the bell shows a badge
-  // even before a real-time order arrives.
-  useEffect(() => {
-    if (variant !== "vendor" || !vendorId) return;
-    orderService.getVendorOrders(vendorId, "PENDING").then((orders) => {
-      if (orders.length > 0) {
-        dispatch(
-          addNotification({
-            message: `${orders.length} pending order${orders.length > 1 ? "s" : ""} waiting for your decision`,
-            severity: "warning",
-            link: "/vendor/orders",
-          }),
-        );
-      }
-    }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [variant, vendorId]);
+  // Vendor pending-order notifications now come from VendorNotificationCenter (mounted app-wide in AppLayout)
 
   const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) =>
     setAnchorEl(e.currentTarget);
@@ -111,10 +97,7 @@ export default function Navbar({ variant }: Props) {
       <Toolbar>
         {variant === "customer" ? (
           // Customer logo is non-navigable — the root path redirects to /login
-          <Typography
-            variant="h6"
-            sx={{ flexGrow: 1, color: "inherit" }}
-          >
+          <Typography variant="h6" sx={{ flexGrow: 1, color: "inherit" }}>
             MallBite
           </Typography>
         ) : (
@@ -246,7 +229,9 @@ export default function Navbar({ variant }: Props) {
                           >
                             <ListItemText
                               primary={n.message}
-                              secondary={new Date(n.createdAt).toLocaleTimeString()}
+                              secondary={new Date(
+                                n.createdAt,
+                              ).toLocaleTimeString()}
                               primaryTypographyProps={{
                                 variant: "body2",
                                 color:

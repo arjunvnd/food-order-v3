@@ -21,6 +21,8 @@ import {
   acceptOrder,
   rejectOrder,
   completeOrder,
+  getVendorActiveMenuItems,
+  createVendorOrder,
 } from '../controllers/vendorOrderController';
 import {
   updateVendorProfile,
@@ -60,6 +62,8 @@ router.patch('/menu-items/:itemId/availability', toggleAvailability);
 
 // Orders
 router.get('/orders', getVendorOrders);
+router.get('/orders/menu-items', getVendorActiveMenuItems);
+router.post('/orders', createVendorOrder);
 router.patch('/orders/:orderId/accept', acceptOrder);
 router.patch('/orders/:orderId/reject', rejectOrder);
 router.patch('/orders/:orderId/complete', completeOrder);

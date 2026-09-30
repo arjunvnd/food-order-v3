@@ -139,7 +139,11 @@ export const rotateQrToken = async (
 
 // ─── Vendor-scoped table management (standalone & takeaway restaurants) ───────
 
-/** GET /api/vendor/tables — list this vendor's own tables */
+/**
+ * GET /api/vendor/tables — list tables usable by this vendor.
+ * Includes tables the vendor owns directly (standalone/takeaway) plus,
+ * for mall vendors, the shared tables of their mall (food court seating).
+ */
 export const vendorGetTables = async (
   req: Request,
   res: Response,
@@ -147,7 +151,15 @@ export const vendorGetTables = async (
 ) => {
   try {
     const vendorId = req.user!.vendorId!;
-    const tables = await prisma.table.findMany({ where: { vendorId } });
+    const vendor = await prisma.vendor.findUnique({ where: { id: vendorId } });
+    const tables = await prisma.table.findMany({
+      where: {
+        OR: [
+          { vendorId },
+          ...(vendor?.mallId ? [{ mallId: vendor.mallId }] : []),
+        ],
+      },
+    });
     res.json(tables);
   } catch (error) {
     next(error);

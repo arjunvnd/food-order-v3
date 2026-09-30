@@ -9,6 +9,7 @@ import {
   Paper,
   Stack,
   Divider,
+  Chip,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useAppDispatch, useAppSelector } from "../../hooks/useAppStore";
@@ -81,7 +82,15 @@ export default function VendorOrderDetailPage() {
         <Typography variant="h5" fontWeight={700}>
           Order #{currentOrder.id.slice(0, 8).toUpperCase()}
         </Typography>
-        <OrderStatusChip status={currentOrder.status} />
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Chip
+            label={currentOrder.source === "VENDOR" ? "Manual" : "QR"}
+            size="small"
+            color={currentOrder.source === "VENDOR" ? "secondary" : "default"}
+            variant={currentOrder.source === "VENDOR" ? "filled" : "outlined"}
+          />
+          <OrderStatusChip status={currentOrder.status} />
+        </Stack>
       </Box>
 
       <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
